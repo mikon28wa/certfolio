@@ -1,10 +1,13 @@
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import * as db from "./db";
+import { analyzeCertificatePDF } from "./llmService";
 
 export const appRouter = router({
-    // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -17,12 +20,403 @@ export const appRouter = router({
     }),
   }),
 
-  // TODO: add feature routers here, e.g.
-  // todo: router({
-  //   list: protectedProcedure.query(({ ctx }) =>
-  //     db.getUserTodos(ctx.user.id)
-  //   ),
-  // }),
+  profile: router({
+    get: protectedProcedure.query(async ({ ctx }) => {
+      return ctx.user;
+    }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        name: z.string().optional(),
+        bio: z.string().optional(),
+        profileSlug: z.string().min(3).max(50).regex(/^[a-z0-9-]+$/).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Check if profileSlug is already taken by another user
+        if (input.profileSlug) {
+          const existing = await db.getUserByProfileSlug(input.profileSlug);
+          if (existing && existing.id !== ctx.user.id) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Dieser Profilname ist bereits vergeben",
+            });
+          }
+        }
+        
+        await db.updateUserProfile(ctx.user.id, input);
+        return { success: true };
+      }),
+      
+    getBySlug: publicProcedure
+      .input(z.object({ slug: z.string() }))
+      .query(async ({ input }) => {
+        const user = await db.getUserByProfileSlug(input.slug);
+        if (!user) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Profil nicht gefunden",
+          });
+        }
+        return {
+          id: user.id,
+          name: user.name,
+          bio: user.bio,
+          profileSlug: user.profileSlug,
+        };
+      }),
+  }),
+
+  certificates: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return db.getCertificatesByUserId(ctx.user.id);
+    }),
+    
+    listPublic: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getPublicCertificatesByUserId(input.userId);
+      }),
+    
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const cert = await db.getCertificateById(input.id);
+        if (!cert) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Zertifikat nicht gefunden",
+          });
+        }
+        
+        // Only owner can view private certificates
+        if (cert.userId !== ctx.user.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Keine Berechtigung",
+          });
+        }
+        
+        return cert;
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        title: z.string().min(1).max(500),
+        issuer: z.string().min(1).max(300),
+        issueDate: z.date().optional(),
+        description: z.string().optional(),
+        skills: z.string().optional(), // JSON string
+        level: z.enum(["beginner", "intermediate", "advanced", "expert"]).optional(),
+        category: z.enum(["it", "marketing", "management", "healthcare", "other"]).optional(),
+        priority: z.enum(["normal", "important"]).default("normal"),
+        isVerified: z.boolean().default(false),
+        verificationUrl: z.string().optional(),
+        fileUrl: z.string().optional(),
+        fileKey: z.string().optional(),
+        fileName: z.string().optional(),
+        mimeType: z.string().optional(),
+        externalUrl: z.string().optional(),
+        isPublic: z.boolean().default(true),
+        tags: z.string().optional(), // JSON string
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const cert = await db.createCertificate({
+          ...input,
+          userId: ctx.user.id,
+        });
+        return cert;
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        title: z.string().min(1).max(500).optional(),
+        issuer: z.string().min(1).max(300).optional(),
+        issueDate: z.date().optional(),
+        description: z.string().optional(),
+        skills: z.string().optional(),
+        level: z.enum(["beginner", "intermediate", "advanced", "expert"]).optional(),
+        category: z.enum(["it", "marketing", "management", "healthcare", "other"]).optional(),
+        priority: z.enum(["normal", "important"]).optional(),
+        isVerified: z.boolean().optional(),
+        verificationUrl: z.string().optional(),
+        externalUrl: z.string().optional(),
+        isPublic: z.boolean().optional(),
+        tags: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...data } = input;
+        
+        const cert = await db.getCertificateById(id);
+        if (!cert) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Zertifikat nicht gefunden",
+          });
+        }
+        
+        if (cert.userId !== ctx.user.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Keine Berechtigung",
+          });
+        }
+        
+        await db.updateCertificate(id, data);
+        return { success: true };
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const cert = await db.getCertificateById(input.id);
+        if (!cert) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Zertifikat nicht gefunden",
+          });
+        }
+        
+        if (cert.userId !== ctx.user.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Keine Berechtigung",
+          });
+        }
+        
+        await db.deleteCertificate(input.id);
+        return { success: true };
+      }),
+    
+    search: protectedProcedure
+      .input(z.object({ query: z.string() }))
+      .query(async ({ ctx, input }) => {
+        if (!input.query.trim()) {
+          return db.getCertificatesByUserId(ctx.user.id);
+        }
+        return db.searchCertificates(ctx.user.id, input.query);
+      }),
+    
+    analyzePDF: protectedProcedure
+      .input(z.object({
+        fileUrl: z.string(),
+        mimeType: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const metadata = await analyzeCertificatePDF(input.fileUrl, input.mimeType);
+        return metadata;
+      }),
+  }),
+
+  collections: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return db.getCollectionsByUserId(ctx.user.id);
+    }),
+    
+    listPublic: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getPublicCollectionsByUserId(input.userId);
+      }),
+    
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const collection = await db.getCollectionById(input.id);
+        if (!collection) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Collection nicht gefunden",
+          });
+        }
+        
+        if (collection.userId !== ctx.user.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Keine Berechtigung",
+          });
+        }
+        
+        return collection;
+      }),
+    
+    getBySlug: publicProcedure
+      .input(z.object({ 
+        userId: z.number(),
+        slug: z.string() 
+      }))
+      .query(async ({ input }) => {
+        const collection = await db.getCollectionBySlug(input.userId, input.slug);
+        if (!collection) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Collection nicht gefunden",
+          });
+        }
+        
+        if (!collection.isPublic) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Diese Collection ist nicht öffentlich",
+          });
+        }
+        
+        return collection;
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(200),
+        description: z.string().optional(),
+        slug: z.string().min(1).max(150).regex(/^[a-z0-9-]+$/),
+        isPublic: z.boolean().default(false),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Check if slug is already taken by this user
+        const existing = await db.getCollectionBySlug(ctx.user.id, input.slug);
+        if (existing) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Dieser Slug ist bereits vergeben",
+          });
+        }
+        
+        const collection = await db.createCollection({
+          ...input,
+          userId: ctx.user.id,
+        });
+        return collection;
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).max(200).optional(),
+        description: z.string().optional(),
+        slug: z.string().min(1).max(150).regex(/^[a-z0-9-]+$/).optional(),
+        isPublic: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...data } = input;
+        
+        const collection = await db.getCollectionById(id);
+        if (!collection) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Collection nicht gefunden",
+          });
+        }
+        
+        if (collection.userId !== ctx.user.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Keine Berechtigung",
+          });
+        }
+        
+        // Check if new slug is already taken
+        if (data.slug && data.slug !== collection.slug) {
+          const existing = await db.getCollectionBySlug(ctx.user.id, data.slug);
+          if (existing) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Dieser Slug ist bereits vergeben",
+            });
+          }
+        }
+        
+        await db.updateCollection(id, data);
+        return { success: true };
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const collection = await db.getCollectionById(input.id);
+        if (!collection) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Collection nicht gefunden",
+          });
+        }
+        
+        if (collection.userId !== ctx.user.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Keine Berechtigung",
+          });
+        }
+        
+        await db.deleteCollection(input.id);
+        return { success: true };
+      }),
+    
+    getCertificates: protectedProcedure
+      .input(z.object({ collectionId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const collection = await db.getCollectionById(input.collectionId);
+        if (!collection) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Collection nicht gefunden",
+          });
+        }
+        
+        if (collection.userId !== ctx.user.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Keine Berechtigung",
+          });
+        }
+        
+        return db.getCertificatesByCollectionId(input.collectionId);
+      }),
+    
+    addCertificate: protectedProcedure
+      .input(z.object({
+        collectionId: z.number(),
+        certificateId: z.number(),
+        sortOrder: z.number().default(0),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const collection = await db.getCollectionById(input.collectionId);
+        if (!collection || collection.userId !== ctx.user.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Keine Berechtigung",
+          });
+        }
+        
+        const certificate = await db.getCertificateById(input.certificateId);
+        if (!certificate || certificate.userId !== ctx.user.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Keine Berechtigung",
+          });
+        }
+        
+        await db.addCertificateToCollection(input.collectionId, input.certificateId, input.sortOrder);
+        return { success: true };
+      }),
+    
+    removeCertificate: protectedProcedure
+      .input(z.object({
+        collectionId: z.number(),
+        certificateId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const collection = await db.getCollectionById(input.collectionId);
+        if (!collection || collection.userId !== ctx.user.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Keine Berechtigung",
+          });
+        }
+        
+        await db.removeCertificateFromCollection(input.collectionId, input.certificateId);
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

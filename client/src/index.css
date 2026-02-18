@@ -43,6 +43,7 @@
 }
 
 :root {
+  /* Blueprint-Design: Königsblau mit technischen Akzenten */
   --primary: var(--color-blue-700);
   --primary-foreground: var(--color-blue-50);
   --sidebar-primary: var(--color-blue-600);
@@ -52,30 +53,30 @@
   --chart-3: var(--color-blue-600);
   --chart-4: var(--color-blue-700);
   --chart-5: var(--color-blue-800);
-  --radius: 0.65rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.235 0.015 65);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.235 0.015 65);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.235 0.015 65);
-  --secondary: oklch(0.98 0.001 286.375);
-  --secondary-foreground: oklch(0.4 0.015 65);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.141 0.005 285.823);
+  --radius: 0.25rem;
+  --background: oklch(0.25 0.08 250);
+  --foreground: oklch(0.98 0.01 250);
+  --card: oklch(0.28 0.07 250);
+  --card-foreground: oklch(0.98 0.01 250);
+  --popover: oklch(0.26 0.075 250);
+  --popover-foreground: oklch(0.98 0.01 250);
+  --secondary: oklch(0.55 0.15 220);
+  --secondary-foreground: oklch(0.98 0.01 250);
+  --muted: oklch(0.35 0.06 250);
+  --muted-foreground: oklch(0.75 0.03 250);
+  --accent: oklch(0.65 0.18 210);
+  --accent-foreground: oklch(0.25 0.08 250);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.623 0.214 259.815);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.235 0.015 65);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.623 0.214 259.815);
+  --border: oklch(0.45 0.1 230);
+  --input: oklch(0.45 0.1 230);
+  --ring: oklch(0.65 0.18 210);
+  --sidebar: oklch(0.28 0.07 250);
+  --sidebar-foreground: oklch(0.98 0.01 250);
+  --sidebar-accent: oklch(0.35 0.06 250);
+  --sidebar-accent-foreground: oklch(0.98 0.01 250);
+  --sidebar-border: oklch(0.45 0.1 230);
+  --sidebar-ring: oklch(0.65 0.18 210);
 }
 
 .dark {
@@ -119,6 +120,29 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Blueprint grid pattern */
+    background-image: 
+      linear-gradient(rgba(100, 150, 200, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(100, 150, 200, 0.08) 1px, transparent 1px);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 0;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight;
+    color: oklch(0.98 0.01 250);
+  }
+  
+  h1 {
+    @apply text-4xl md:text-5xl;
+  }
+  
+  h2 {
+    @apply text-3xl md:text-4xl;
+  }
+  
+  h3 {
+    @apply text-2xl md:text-3xl;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),

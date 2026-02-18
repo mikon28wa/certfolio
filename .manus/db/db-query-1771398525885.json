@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `certificates` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`userId` int NOT NULL,\n\t`title` varchar(500) NOT NULL,\n\t`issuer` varchar(300) NOT NULL,\n\t`issueDate` timestamp,\n\t`description` text,\n\t`fileUrl` text NOT NULL,\n\t`fileKey` text NOT NULL,\n\t`fileName` varchar(300),\n\t`mimeType` varchar(100),\n\t`isPublic` boolean NOT NULL DEFAULT true,\n\t`tags` text,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `certificates_id` PRIMARY KEY(`id`)\n);\n\nALTER TABLE `users` ADD `bio` text;\nALTER TABLE `users` ADD `profileSlug` varchar(100);\nALTER TABLE `users` ADD CONSTRAINT `users_profileSlug_unique` UNIQUE(`profileSlug`);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user RQLuagfstphZ8U2.0c7eed8a7cc1 --database 8SNDfaXn3dqFztPfLJ3ZfF --execute CREATE TABLE `certificates` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`userId` int NOT NULL,\n\t`title` varchar(500) NOT NULL,\n\t`issuer` varchar(300) NOT NULL,\n\t`issueDate` timestamp,\n\t`description` text,\n\t`fileUrl` text NOT NULL,\n\t`fileKey` text NOT NULL,\n\t`fileName` varchar(300),\n\t`mimeType` varchar(100),\n\t`isPublic` boolean NOT NULL DEFAULT true,\n\t`tags` text,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `certificates_id` PRIMARY KEY(`id`)\n);\n\nALTER TABLE `users` ADD `bio` text;\nALTER TABLE `users` ADD `profileSlug` varchar(100);\nALTER TABLE `users` ADD CONSTRAINT `users_profileSlug_unique` UNIQUE(`profileSlug`);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1488
+}
