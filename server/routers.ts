@@ -198,9 +198,22 @@ export const appRouter = router({
         externalUrl: z.string().optional(),
         isPublic: z.boolean().optional(),
         tags: z.string().optional(),
+        // Extended metadata
+        courseUuid: z.string().optional(),
+        courseDuration: z.number().optional(),
+        courseCredits: z.number().optional(),
+        completionGrade: z.string().optional(),
+        learningHours: z.number().optional(),
+        // Skill mappings replacement
+        skillMappings: z.array(z.object({
+          skillName: z.string(),
+          skillCategory: z.string(),
+          weight: z.number().min(0).max(100),
+          reasoning: z.string().optional(),
+        })).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const { id, ...data } = input;
+        const { id, skillMappings, ...data } = input;
         
         const cert = await db.getCertificateById(id);
         if (!cert) {
@@ -218,6 +231,27 @@ export const appRouter = router({
         }
         
         await db.updateCertificate(id, data);
+        
+        // If skill mappings are provided, replace existing ones
+        if (skillMappings !== undefined) {
+          // Delete existing mappings for this certificate
+          await skillsDb.deleteSkillMappingsByCertificateId(id);
+          
+          // Create new mappings if any
+          if (skillMappings.length > 0) {
+            await skillsDb.createSkillMappings(
+              skillMappings.map(m => ({
+                ...m,
+                certificateId: id,
+                source: 'llm' as const,
+              }))
+            );
+          }
+          
+          // Recalculate user skills
+          await skillsDb.recalculateUserSkills(ctx.user.id);
+        }
+        
         return { success: true };
       }),
     

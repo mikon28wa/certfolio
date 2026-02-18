@@ -34,7 +34,7 @@
 - [x] Dashboard-Übersicht mit Zertifikatskarten
 - [x] Upload-Komponente mit Drag & Drop
 - [x] Formular zur Metadaten-Erfassung
-- [ ] Bearbeitungs-Dialog für Zertifikate
+- [x] Bearbeitungs-Dialog für Zertifikate
 - [x] Lösch-Funktion mit Bestätigung
 
 ## Öffentliches Profil
@@ -199,3 +199,12 @@
 - [x] Frontend: Projekt-Upload-Formular mit Medien und KI-Vorschlägen
 - [x] Collection-spezifische Skill-Level-Berechnung
 - [x] Frontend: Skill-Detailansicht (beitragende Zertifikate + Projekte)
+
+## Bearbeitungs-Dialog für Zertifikate
+- [x] Backend: Skill-Mappings beim Update ersetzen/aktualisieren
+- [x] Frontend: Bearbeitungs-Dialog mit vorausgefülltem Formular
+- [x] Frontend: Skill-Mapping-Editor (hinzufügen, entfernen, Gewichtung ändern)
+- [x] Frontend: Datei-Vorschau für hochgeladene Zertifikate
+- [x] Frontend: Erneute LLM-Analyse-Option
+- [x] Integration in Zertifikatsliste und Dashboard
+- [x] Tests für Update mit Skill-Mappings (49/49 Tests bestanden)

@@ -8,10 +8,13 @@ import { trpc } from "@/lib/trpc";
 import { Award, Plus, Search, FileText, ExternalLink, Shield, Trash2, Edit } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
+import EditCertificateDialog from "@/components/EditCertificateDialog";
 
 export default function Certificates() {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
+  const [editCert, setEditCert] = useState<any>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   
   const { data: certificates, isLoading, refetch } = trpc.certificates.list.useQuery(undefined, {
     enabled: !!user,
@@ -31,6 +34,11 @@ export default function Certificates() {
     if (confirm(`Möchtest du "${title}" wirklich löschen?`)) {
       await deleteCertificate.mutateAsync({ id });
     }
+  };
+
+  const handleEdit = (cert: any) => {
+    setEditCert(cert);
+    setEditDialogOpen(true);
   };
 
   const filteredCertificates = certificates?.filter((cert) => {
@@ -178,11 +186,14 @@ export default function Certificates() {
 
                     {/* Actions */}
                     <div className="flex gap-2 pt-2">
-                      <Button variant="outline" size="sm" className="flex-1" asChild>
-                        <Link href={`/certificates/${cert.id}`}>
-                          <Edit className="mr-1 h-3 w-3" />
-                          Bearbeiten
-                        </Link>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleEdit(cert)}
+                      >
+                        <Edit className="mr-1 h-3 w-3" />
+                        Bearbeiten
                       </Button>
                       <Button
                         variant="ghost"
@@ -221,6 +232,14 @@ export default function Certificates() {
           </Card>
         )}
       </div>
+
+      {/* Edit Dialog */}
+      <EditCertificateDialog
+        certificate={editCert}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSuccess={() => refetch()}
+      />
     </div>
   );
 }

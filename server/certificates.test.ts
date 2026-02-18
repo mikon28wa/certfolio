@@ -143,6 +143,68 @@ describe("certificates router", () => {
     ).rejects.toThrow();
   });
 
+  it("updates certificate with skill mappings", async () => {
+    const { ctx } = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+
+    // Create certificate
+    const certificate = await caller.certificates.create({
+      title: "Node.js Masterclass",
+      issuer: "Udemy",
+      isPublic: true,
+      priority: "normal",
+    });
+
+    // Update with skill mappings
+    await caller.certificates.update({
+      id: certificate.id,
+      title: "Node.js Masterclass - Complete",
+      level: "advanced",
+      category: "it",
+      skills: "Node.js, Express, MongoDB",
+      skillMappings: [
+        { skillName: "Node.js", skillCategory: "Technical", weight: 40 },
+        { skillName: "Express.js", skillCategory: "Technical", weight: 30 },
+        { skillName: "MongoDB", skillCategory: "Technical", weight: 30 },
+      ],
+    });
+
+    // Verify update
+    const updated = await caller.certificates.get({ id: certificate.id });
+    expect(updated.title).toBe("Node.js Masterclass - Complete");
+    expect(updated.level).toBe("advanced");
+    expect(updated.category).toBe("it");
+  });
+
+  it("updates certificate with extended metadata", async () => {
+    const { ctx } = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+
+    // Create certificate
+    const certificate = await caller.certificates.create({
+      title: "Data Science Professional",
+      issuer: "IBM",
+      isPublic: true,
+      priority: "normal",
+    });
+
+    // Update with extended metadata
+    await caller.certificates.update({
+      id: certificate.id,
+      courseDuration: 120,
+      courseCredits: 6,
+      completionGrade: "95%",
+      learningHours: 200,
+      courseUuid: "ibm-ds-prof-2024",
+      isVerified: true,
+      verificationUrl: "https://www.credly.com/badges/12345",
+    });
+
+    // Verify update
+    const updated = await caller.certificates.get({ id: certificate.id });
+    expect(updated.isVerified).toBe(true);
+  });
+
   it("searches certificates by title and issuer", async () => {
     const { ctx } = createAuthContext();
     const caller = appRouter.createCaller(ctx);
