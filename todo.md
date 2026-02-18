@@ -139,3 +139,20 @@
 - [x] Tests für Skill Mappings (Bulk-Erstellung)
 - [x] Tests für Course Library (CRUD)
 - [x] Datenbank-Cleanup zwischen Tests
+
+## Phase 5: UUID-Matching und automatisches Skill-Mapping (korrigiert)
+- [x] Course Library UI entfernen (nur Backend-System)
+- [x] UUID-Eingabefeld im Upload-Formular hinzufügen
+- [x] Automatische UUID-Prüfung beim Upload
+- [x] Skill-Mappings aus Library übernehmen (falls vorhanden)
+- [x] Automatische LLM-Analyse mit Skill-Extraktion beim Upload
+- [x] Kurs zur Library hinzufügen nach erfolgreicher Analyse
+- [x] Skill-Aggregation nach Upload automatisch auslösen
+
+## Phase 6: Tests für vollständigen Upload-Flow
+- [x] Test: Zertifikat mit Skill-Mappings erstellen und Aggregation auslösen
+- [x] Test: Kurs zur Library hinzufügen mit UUID
+- [x] Test: Usage Count für existierenden Kurs erhöhen
+- [x] Test: Skills aus mehreren Zertifikaten aggregieren
+- [x] Test: Zertifikat ohne Skill-Mappings behandeln
+- [x] Alle 5 Tests bestanden

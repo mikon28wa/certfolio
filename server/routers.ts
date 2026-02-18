@@ -120,12 +120,65 @@ export const appRouter = router({
         externalUrl: z.string().optional(),
         isPublic: z.boolean().default(true),
         tags: z.string().optional(), // JSON string
+        // Extended metadata for skill mapping
+        courseUuid: z.string().optional(),
+        courseDuration: z.number().optional(),
+        courseCredits: z.number().optional(),
+        completionGrade: z.string().optional(),
+        learningHours: z.number().optional(),
+        // Skill mappings from LLM analysis
+        skillMappings: z.array(z.object({
+          skillName: z.string(),
+          skillCategory: z.string(),
+          weight: z.number().min(0).max(100),
+          reasoning: z.string().optional(),
+        })).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        const { skillMappings, ...certData } = input;
+        
+        // Create certificate
         const cert = await db.createCertificate({
-          ...input,
+          ...certData,
           userId: ctx.user.id,
         });
+        
+        // If skill mappings are provided, create them and trigger aggregation
+        if (skillMappings && skillMappings.length > 0) {
+          await skillsDb.createSkillMappings(
+            skillMappings.map(m => ({
+              ...m,
+              certificateId: cert.id,
+              source: 'llm' as const,
+            }))
+          );
+          
+          // Trigger skill aggregation for this user
+          await skillsDb.recalculateUserSkills(ctx.user.id);
+        }
+        
+        // If courseUuid is provided, check if course exists in library
+        if (input.courseUuid) {
+          const existingCourse = await skillsDb.getCourseByUuid(input.courseUuid);
+          if (!existingCourse) {
+            // Add to course library for future reference
+            await skillsDb.createCourse({
+              courseUuid: input.courseUuid,
+              title: input.title,
+              issuer: input.issuer,
+              description: input.description,
+              duration: input.courseDuration,
+              credits: input.courseCredits,
+              level: input.level,
+              category: input.category,
+              analyzedBy: ctx.user.id,
+            });
+          } else {
+            // Increment usage count
+            await skillsDb.incrementCourseUsage(existingCourse.courseUuid);
+          }
+        }
+        
         return cert;
       }),
     

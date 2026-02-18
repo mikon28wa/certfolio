@@ -10,6 +10,7 @@ import NewCertificate from "./pages/NewCertificate";
 import Certificates from "./pages/Certificates";
 import Skills from "./pages/Skills";
 
+
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -19,6 +20,7 @@ function Router() {
       <Route path={"/certificates"} component={Certificates} />
       <Route path={"/certificates/new"} component={NewCertificate} />
       <Route path={"/skills"} component={Skills} />
+
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

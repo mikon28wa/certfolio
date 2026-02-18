@@ -36,9 +36,16 @@ export default function NewCertificate() {
   const [verificationUrl, setVerificationUrl] = useState("");
   const [externalUrl, setExternalUrl] = useState("");
   const [isPublic, setIsPublic] = useState(true);
+  const [courseUuid, setCourseUuid] = useState("");
+  const [courseDuration, setCourseDuration] = useState<number | undefined>();
+  const [courseCredits, setCourseCredits] = useState<number | undefined>();
+  const [completionGrade, setCompletionGrade] = useState("");
+  const [learningHours, setLearningHours] = useState<number | undefined>();
+  const [extractedSkillMappings, setExtractedSkillMappings] = useState<any[]>([]);
 
   const createCertificate = trpc.certificates.create.useMutation();
   const analyzePDF = trpc.certificates.analyzePDF.useMutation();
+  const analyzeWithSkills = trpc.certificates.analyzeWithSkills.useMutation();
 
   const handleFileSelect = async (file: File) => {
     setSelectedFile(file);
@@ -101,21 +108,43 @@ export default function NewCertificate() {
       // Upload file first
       const { url: fileUrl } = await uploadFileToS3(selectedFile);
       
-      // Analyze with LLM
-      const metadata = await analyzePDF.mutateAsync({
+      // Analyze with LLM (extended analysis with skills)
+      const analysis = await analyzeWithSkills.mutateAsync({
         fileUrl,
         mimeType: selectedFile.type,
       });
       
       // Fill form with extracted data
-      setTitle(metadata.title);
-      setIssuer(metadata.issuer);
-      if (metadata.issueDate) {
-        setIssueDate(metadata.issueDate);
+      setTitle(analysis.title);
+      setIssuer(analysis.issuer);
+      if (analysis.issueDate) {
+        setIssueDate(analysis.issueDate);
       }
-      setDescription(metadata.description);
+      setDescription(analysis.description);
       
-      toast.success("Zertifikat erfolgreich analysiert!");
+      // Fill extended metadata
+      if (analysis.skills && analysis.skills.length > 0) {
+        setSkills(analysis.skills.join(", "));
+      }
+      if (analysis.level) {
+        setLevel(analysis.level as any);
+      }
+      if (analysis.category) {
+        setCategory(analysis.category as any);
+      }
+      if (analysis.courseDuration) {
+        setCourseDuration(analysis.courseDuration);
+      }
+      if (analysis.courseCredits) {
+        setCourseCredits(analysis.courseCredits);
+      }
+      
+      // Store extracted skill mappings for submission
+      if (analysis.skills && analysis.skills.length > 0) {
+        setExtractedSkillMappings(analysis.skills);
+      }
+      
+      toast.success(`Zertifikat erfolgreich analysiert! ${analysis.skills?.length || 0} Skills wurden automatisch extrahiert.`);
     } catch (error) {
       console.error("Analyse fehlgeschlagen:", error);
       toast.error("Automatische Analyse fehlgeschlagen. Bitte fülle die Felder manuell aus.");
@@ -174,6 +203,14 @@ export default function NewCertificate() {
         mimeType,
         externalUrl: uploadMode === "link" ? externalUrl : undefined,
         isPublic,
+        // Extended metadata
+        courseUuid: courseUuid || undefined,
+        courseDuration,
+        courseCredits,
+        completionGrade: completionGrade || undefined,
+        learningHours,
+        // Skill mappings from LLM analysis
+        skillMappings: extractedSkillMappings.length > 0 ? extractedSkillMappings : undefined,
       });
       
       toast.success("Zertifikat erfolgreich hinzugefügt!");
