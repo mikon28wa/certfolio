@@ -165,7 +165,7 @@
 - [x] Branding-Optionen (Logo, Farben, Kontaktinfo, LinkedIn)
 - [x] Automatischer S3-Upload des generierten PDFs
 
-## 10. Tests (96 bestanden)
+## 10. Tests (109 bestanden)
 - [x] Auth-Tests (1 Test: Logout)
 - [x] Zertifikats-Tests (8 Tests: CRUD, Validierung)
 - [x] Skill-Management-Tests (7 Tests: Mappings, Aggregation)
@@ -229,9 +229,15 @@
 - [ ] Account-Löschung (DSGVO Art. 17)
 
 ### 17. Erweiterte Skill-Features
-- [ ] Skill-Entwicklung über Zeit visualisieren (Zeitreihen-Diagramm)
-- [ ] Skill-Vergleich zwischen Collections
-- [ ] Skill-Empfehlungen basierend auf Lücken
+- [x] Skill-Entwicklung über Zeit visualisieren (Zeitreihen-Diagramm mit Recharts)
+- [x] Skill-Historie-Tabelle für Snapshots
+- [x] Backend: getSkillTimeline, compareSkills, getSkillRecommendations, captureSnapshot
+- [x] Frontend: SkillTimelineChart-Komponente
+- [x] Frontend: SkillRecommendations-Komponente
+- [x] Skill-Empfehlungen basierend auf Level und Aktivität
+- [x] Integration in Skills-Seite
+- [x] 13 Vitest-Tests für erweiterte Features bestanden
+- [ ] Skill-Vergleich zwischen Collections (UI)
 - [ ] Skill-Kategorien-Filter im Dashboard
 
 ### 18. UX-Verbesserungen

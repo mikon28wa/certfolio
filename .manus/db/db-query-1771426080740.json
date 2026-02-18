@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `skill_history` (\n  `id` int AUTO_INCREMENT PRIMARY KEY,\n  `userId` int NOT NULL,\n  `skillName` varchar(200) NOT NULL,\n  `skillCategory` varchar(100),\n  `level` int NOT NULL DEFAULT 0,\n  `totalPoints` decimal(10, 2) NOT NULL DEFAULT 0.00,\n  `certificateCount` int NOT NULL DEFAULT 0,\n  `projectCount` int NOT NULL DEFAULT 0,\n  `snapshotDate` timestamp NOT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  INDEX `idx_user_skill_date` (`userId`, `skillName`, `snapshotDate`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user RQLuagfstphZ8U2.0c7eed8a7cc1 --database 8SNDfaXn3dqFztPfLJ3ZfF --execute CREATE TABLE IF NOT EXISTS `skill_history` (\n  `id` int AUTO_INCREMENT PRIMARY KEY,\n  `userId` int NOT NULL,\n  `skillName` varchar(200) NOT NULL,\n  `skillCategory` varchar(100),\n  `level` int NOT NULL DEFAULT 0,\n  `totalPoints` decimal(10, 2) NOT NULL DEFAULT 0.00,\n  `certificateCount` int NOT NULL DEFAULT 0,\n  `projectCount` int NOT NULL DEFAULT 0,\n  `snapshotDate` timestamp NOT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  INDEX `idx_user_skill_date` (`userId`, `skillName`, `snapshotDate`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 238
+}

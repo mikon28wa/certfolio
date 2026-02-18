@@ -419,3 +419,134 @@ export async function getCollectionSkills(collectionId: number) {
 
   return results;
 }
+
+// ==================== Skill Timeline & History ====================
+
+export async function captureSkillSnapshot(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const skills = await getUserSkills(userId);
+  const snapshotDate = new Date();
+  
+  const { skillHistory } = await import("../drizzle/schema");
+  
+  const snapshots = skills.map(skill => ({
+    userId,
+    skillName: skill.skillName,
+    skillCategory: skill.skillCategory || null,
+    level: skill.level,
+    totalPoints: skill.totalPoints.toString(),
+    certificateCount: skill.certificateCount,
+    projectCount: skill.projectCount,
+    snapshotDate,
+  }));
+  
+  if (snapshots.length > 0) {
+    await db.insert(skillHistory).values(snapshots);
+  }
+  
+  return snapshots;
+}
+
+export async function getSkillTimeline(
+  userId: number,
+  skillName: string,
+  startDate?: string,
+  endDate?: string
+) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { skillHistory } = await import("../drizzle/schema");
+  
+  const conditions = [
+    eq(skillHistory.userId, userId),
+    eq(skillHistory.skillName, skillName),
+  ];
+  
+  if (startDate) {
+    conditions.push(sql`${skillHistory.snapshotDate} >= ${startDate}`);
+  }
+  if (endDate) {
+    conditions.push(sql`${skillHistory.snapshotDate} <= ${endDate}`);
+  }
+  
+  const history = await db
+    .select()
+    .from(skillHistory)
+    .where(and(...conditions))
+    .orderBy(skillHistory.snapshotDate);
+  
+  return history.map(h => ({
+    date: h.snapshotDate,
+    level: h.level,
+    totalPoints: parseFloat(h.totalPoints),
+    certificateCount: h.certificateCount,
+    projectCount: h.projectCount,
+  }));
+}
+
+export async function compareSkills(userId: number, skillNames: string[]) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const skills = await getUserSkills(userId);
+  const filtered = skills.filter(s => skillNames.includes(s.skillName));
+  
+  return filtered.map(s => ({
+    skillName: s.skillName,
+    skillCategory: s.skillCategory,
+    level: s.level,
+    totalPoints: s.totalPoints,
+    certificateCount: s.certificateCount,
+    projectCount: s.projectCount,
+    lastEventDate: s.lastEventDate,
+  }));
+}
+
+export async function getSkillRecommendations(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const skills = await getUserSkills(userId);
+  
+  // Identify gaps: skills with level < 3 or no recent activity
+  const recommendations: Array<{
+    type: "level_up" | "refresh" | "new_skill";
+    skillName: string;
+    currentLevel: number;
+    reason: string;
+    suggestedAction: string;
+  }> = [];
+  
+  const now = Date.now();
+  const sixMonthsAgo = now - 6 * 30 * 24 * 60 * 60 * 1000;
+  
+  for (const skill of skills) {
+    // Level up recommendation (Level 2 → 3)
+    if (skill.level === 2) {
+      recommendations.push({
+        type: "level_up",
+        skillName: skill.skillName,
+        currentLevel: skill.level,
+        reason: "Du bist auf einem guten Weg. Ein weiteres Projekt oder Zertifikat bringt dich auf Level 3.",
+        suggestedAction: "Projekt mit " + skill.skillName + " starten oder vertiefenden Kurs belegen",
+      });
+    }
+    
+    // Refresh recommendation (no activity in 6 months)
+    if (skill.lastEventDate && new Date(skill.lastEventDate).getTime() < sixMonthsAgo) {
+      recommendations.push({
+        type: "refresh",
+        skillName: skill.skillName,
+        currentLevel: skill.level,
+        reason: "Keine Aktivität in den letzten 6 Monaten. Deine Skills könnten veraltet sein.",
+        suggestedAction: "Auffrischungskurs oder kleines Projekt zur Reaktivierung",
+      });
+    }
+  }
+  
+  // Limit to top 5 recommendations
+  return recommendations.slice(0, 5);
+}

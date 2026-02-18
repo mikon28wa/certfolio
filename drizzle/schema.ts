@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, decimal, index } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -282,6 +282,28 @@ export const projectSkillLinks = mysqlTable("project_skill_links", {
 
 export type ProjectSkillLink = typeof projectSkillLinks.$inferSelect;
 export type InsertProjectSkillLink = typeof projectSkillLinks.$inferInsert;
+
+/**
+ * Skill History - Periodic snapshots of user skill levels for time-series visualization
+ * Captures skill development over time
+ */
+export const skillHistory = mysqlTable("skill_history", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  skillName: varchar("skillName", { length: 200 }).notNull(),
+  skillCategory: varchar("skillCategory", { length: 100 }),
+  level: int("level").default(0).notNull(),
+  totalPoints: decimal("totalPoints", { precision: 10, scale: 2 }).default("0.00").notNull(),
+  certificateCount: int("certificateCount").default(0).notNull(),
+  projectCount: int("projectCount").default(0).notNull(),
+  snapshotDate: timestamp("snapshotDate").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  userSkillDateIdx: index("idx_user_skill_date").on(table.userId, table.skillName, table.snapshotDate),
+}));
+
+export type SkillHistory = typeof skillHistory.$inferSelect;
+export type InsertSkillHistory = typeof skillHistory.$inferInsert;
 
 /**
  * Project Media - Additional media files/links attached to projects

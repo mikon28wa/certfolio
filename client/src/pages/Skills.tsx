@@ -11,6 +11,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
+import { SkillTimelineChart } from "@/components/SkillTimelineChart";
+import { SkillRecommendations } from "@/components/SkillRecommendations";
 import {
   Dialog,
   DialogContent,
@@ -73,6 +75,15 @@ export default function Skills() {
   const { data: skills, isLoading, refetch } = trpc.skills.getUserSkills.useQuery(undefined, {
     enabled: !!user,
   });
+  
+  const { data: recommendations } = trpc.skills.getRecommendations.useQuery(undefined, {
+    enabled: !!user,
+  });
+  
+  const { data: timeline } = trpc.skills.getSkillTimeline.useQuery(
+    { skillName: selectedSkill! },
+    { enabled: !!selectedSkill }
+  );
 
   const { data: skillDetails, isLoading: detailsLoading } = trpc.skills.getSkillDetails.useQuery(
     { skillName: selectedSkill! },
@@ -196,6 +207,11 @@ export default function Skills() {
           </CardContent>
         </Card>
 
+        {/* Skill Recommendations */}
+        {recommendations && recommendations.length > 0 && (
+          <SkillRecommendations recommendations={recommendations} />
+        )}
+        
         {!skills || skills.length === 0 ? (
           <Card className="border-2 border-dashed border-border/50 bg-card/30">
             <CardContent className="py-16 text-center">
@@ -406,6 +422,17 @@ export default function Skills() {
               </div>
             ) : skillDetails ? (
               <div className="space-y-5">
+                {/* Skill Timeline */}
+                {timeline && timeline.length > 0 && (
+                  <SkillTimelineChart skillName={selectedSkill!} data={timeline} />
+                )}
+                
+                {timeline && timeline.length === 0 && (
+                  <div className="p-4 bg-accent/20 rounded-lg border border-border/30 text-sm text-muted-foreground">
+                    Noch keine historischen Daten für diesen Skill. Snapshots werden automatisch bei Skill-Neuberechnungen erstellt.
+                  </div>
+                )}
+                
                 {/* Score Overview */}
                 <div className="p-4 bg-accent/20 rounded-lg border border-border/30">
                   <div className="flex items-center gap-3 mb-3">
