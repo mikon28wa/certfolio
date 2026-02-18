@@ -6,6 +6,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 import { analyzeCertificatePDF } from "./llmService";
+import { storagePut } from "./storage";
 
 export const appRouter = router({
   system: systemRouter,
@@ -205,6 +206,28 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const metadata = await analyzeCertificatePDF(input.fileUrl, input.mimeType);
         return metadata;
+      }),
+    
+    uploadFile: protectedProcedure
+      .input(z.object({
+        fileData: z.string(), // base64 encoded file
+        fileName: z.string(),
+        mimeType: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Decode base64
+        const base64Data = input.fileData.split(',')[1] || input.fileData;
+        const buffer = Buffer.from(base64Data, 'base64');
+        
+        // Generate unique key
+        const timestamp = Date.now();
+        const randomSuffix = Math.random().toString(36).substring(7);
+        const fileKey = `${ctx.user.id}-certificates/${timestamp}-${randomSuffix}-${input.fileName}`;
+        
+        // Upload to S3
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+        
+        return { url, key: fileKey };
       }),
   }),
 

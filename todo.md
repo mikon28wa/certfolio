@@ -31,11 +31,11 @@
 - [x] Responsive Design für Mobile optimieren
 
 ## Frontend - Zertifikatsverwaltung
-- [ ] Dashboard-Übersicht mit Zertifikatskarten
-- [ ] Upload-Komponente mit Drag & Drop
-- [ ] Formular zur Metadaten-Erfassung
+- [x] Dashboard-Übersicht mit Zertifikatskarten
+- [x] Upload-Komponente mit Drag & Drop
+- [x] Formular zur Metadaten-Erfassung
 - [ ] Bearbeitungs-Dialog für Zertifikate
-- [ ] Lösch-Funktion mit Bestätigung
+- [x] Lösch-Funktion mit Bestätigung
 
 ## Öffentliches Profil
 - [ ] Öffentliche Profilseite mit teilbarem Link
@@ -87,3 +87,16 @@
 ## PDF-Export erweitert
 - [ ] Export einzelner Collections als PDF
 - [ ] Professionelles PDF-Layout mit Logo/Branding
+
+## Zertifikats-Upload-Formular
+- [x] Datei-Upload-Komponente mit Drag & Drop
+- [x] S3-Upload-Integration
+- [x] Automatische LLM-Analyse nach Upload
+- [x] Formular für manuelle Metadaten-Eingabe
+- [x] Skills-Tags-Eingabe
+- [x] Level-Auswahl (Beginner/Intermediate/Advanced/Expert)
+- [x] Kategorie-Auswahl
+- [x] Verifizierungs-URL-Eingabe
+- [x] Alternative: Externe Link-Eingabe statt Datei-Upload
+- [x] Vorschau des hochgeladenen Zertifikats
+- [x] Validierung und Fehlerbehandlung
