@@ -1,0 +1,26 @@
+# robots.txt für CertFolio
+
+# Alle Crawler erlaubt
+User-agent: *
+Allow: /
+
+# Geschützte Bereiche blockieren
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /certificates
+Disallow: /skills
+Disallow: /collections
+Disallow: /projects/new
+Disallow: /certificates/new
+
+# Öffentliche Bereiche explizit erlauben
+Allow: /
+Allow: /impressum
+Allow: /datenschutz
+
+# Sitemap-Verweis
+Sitemap: https://certfolio.manus.space/sitemap.xml
+
+# Crawl-Verzögerung für höfliche Bots
+Crawl-delay: 1

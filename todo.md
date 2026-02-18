@@ -343,3 +343,11 @@
 - [x] Open Graph Tags für Social Media hinzugefügt (og:title, og:description, og:image)
 - [x] Twitter Card Tags hinzugefügt
 - [x] HTML lang-Attribut auf "de" geändert
+
+
+### robots.txt und sitemap.xml
+- [x] robots.txt erstellen mit Crawler-Regeln (Allow/Disallow für öffentliche/geschützte Bereiche)
+- [x] sitemap.xml erstellen mit allen öffentlichen Seiten (Startseite, Impressum, Datenschutz)
+- [x] Sitemap-Verweis in robots.txt eingefügt
+- [x] Crawl-Delay für höfliche Bots gesetzt (1 Sekunde)
+- [x] Prioritäten und Changefreq für jede URL definiert
