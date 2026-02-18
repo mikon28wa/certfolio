@@ -134,6 +134,18 @@ export default function NewCertificate() {
       if (analysis.category) {
         setCategory(analysis.category as any);
       }
+      if ((analysis as any).customCategory) {
+        setCustomCategory((analysis as any).customCategory);
+      }
+      if ((analysis as any).priority) {
+        setPriority((analysis as any).priority);
+      }
+      if ((analysis as any).isVerified !== null && (analysis as any).isVerified !== undefined) {
+        setIsVerified((analysis as any).isVerified);
+      }
+      if ((analysis as any).verificationUrl) {
+        setVerificationUrl((analysis as any).verificationUrl);
+      }
       if (analysis.courseDuration) {
         setCourseDuration(analysis.courseDuration);
       }

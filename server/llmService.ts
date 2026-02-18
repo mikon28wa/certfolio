@@ -23,6 +23,10 @@ export interface ExtendedCertificateAnalysis {
   courseCredits: number | null;
   level: "beginner" | "intermediate" | "advanced" | "expert" | null;
   category: "it" | "marketing" | "management" | "healthcare" | "other" | null;
+  customCategory: string | null; // Freitext-Kategorie, wenn category="other"
+  priority: "normal" | "important" | null;
+  isVerified: boolean | null;
+  verificationUrl: string | null;
   skills: SkillMapping[];
 }
 
@@ -246,6 +250,10 @@ Extrahiere folgende Informationen aus dem bereitgestellten Zertifikat:
    - Credits/ECTS (falls erkennbar, sonst null)
    - Level: beginner, intermediate, advanced, expert (basierend auf Inhalt/Voraussetzungen)
    - Kategorie: it, marketing, management, healthcare, other
+   - customCategory: Falls category="other", extrahiere einen präzisen Freitext-Kategorienamen (z.B. "Blockchain", "Cybersecurity", "Data Science")
+   - priority: "important" wenn es sich um ein anerkanntes/wichtiges Zertifikat handelt (z.B. AWS, Google, Microsoft), sonst "normal"
+   - isVerified: true wenn eine Verifikations-URL oder ID im Dokument erkennbar ist
+   - verificationUrl: Extrahiere die Verifikations-URL falls vorhanden (z.B. Coursera-Link, Credential-ID-URL)
 
 3. **Skill-Mapping:**
    Analysiere den Kursinhalt und zerlege ihn in 3-7 konkrete Skills mit Gewichtung.
@@ -299,6 +307,13 @@ Antworte ausschließlich mit einem JSON-Objekt.`,
                 type: ["string", "null"],
                 enum: ["it", "marketing", "management", "healthcare", "other", null],
               },
+              customCategory: { type: ["string", "null"] },
+              priority: {
+                type: ["string", "null"],
+                enum: ["normal", "important", null],
+              },
+              isVerified: { type: ["boolean", "null"] },
+              verificationUrl: { type: ["string", "null"] },
               skills: {
                 type: "array",
                 items: {
@@ -323,6 +338,10 @@ Antworte ausschließlich mit einem JSON-Objekt.`,
               "courseCredits",
               "level",
               "category",
+              "customCategory",
+              "priority",
+              "isVerified",
+              "verificationUrl",
               "skills",
             ],
             additionalProperties: false,

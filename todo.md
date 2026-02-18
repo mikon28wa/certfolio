@@ -305,3 +305,12 @@
 - [x] Datenbank: customCategory-Spalte hinzugefügt
 - [x] Anzeige: customCategory wird in Zertifikatsliste angezeigt
 - [x] Label geändert: "Sonstiges" → "Eigene Kategorie"
+
+
+### Vollständige Metadaten-Extraktion
+- [x] LLM-Analyse um customCategory erweitern
+- [x] LLM-Analyse um priority, isVerified, verificationUrl erweitern
+- [x] Frontend: Formular mit allen extrahierten Metadaten vorausfüllen
+- [x] ExtendedCertificateAnalysis-Interface erweitert
+- [x] JSON-Schema für LLM-Response aktualisiert
+- [x] Prompt mit detaillierten Anweisungen für neue Felder
