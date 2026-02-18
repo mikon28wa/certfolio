@@ -165,7 +165,7 @@
 - [x] Branding-Optionen (Logo, Farben, Kontaktinfo, LinkedIn)
 - [x] Automatischer S3-Upload des generierten PDFs
 
-## 10. Tests (109 bestanden)
+## 10. Tests (127 bestanden)
 - [x] Auth-Tests (1 Test: Logout)
 - [x] Zertifikats-Tests (8 Tests: CRUD, Validierung)
 - [x] Skill-Management-Tests (7 Tests: Mappings, Aggregation)
@@ -252,8 +252,12 @@
 - [x] 16 Vitest-Tests für UX-Komponenten bestanden
 
 ### 19. Performance & Qualität
-- [ ] Frontend-Tests (Vitest für React-Komponenten)
+- [x] Frontend-Tests (Vitest für React-Komponenten) – 18 Tests für EmptyState, PageBreadcrumb, OptimizedImage
+- [x] Lazy Loading für alle Seiten mit React.lazy und Suspense
+- [x] OptimizedImage-Komponente mit Intersection Observer
+- [x] useImageOptimization-Hook für Bild-Kompression und Resize
+- [x] useImageCache-Hook für Memory-Caching
+- [x] PageLoader-Komponente für Lazy-Loading-Fallback
+- [x] Vitest-Konfiguration für Frontend-Tests (jsdom)
 - [ ] E2E-Tests (kritische Flows)
-- [ ] Lazy Loading für Seiten
-- [ ] Bild-Optimierung für hochgeladene Zertifikate
 - [ ] Error-Tracking und Monitoring
