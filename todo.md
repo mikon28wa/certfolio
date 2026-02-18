@@ -383,3 +383,13 @@
 - [ ] Maintainability Index erneut messen (Ziel: >50)
 - [x] Haupt-Router von 827 LOC auf 28 LOC reduziert
 - [x] 9 Module: auth (57), profile (50), certificates (272), skills (50), collections (219), projects (172), pdf (38), courseLibrary (49), skillMappings (59)
+
+
+### EditCertificateDialog Refactoring (778 LOC → 7 Module)
+- [x] Custom Hook `useEditCertificateForm` erstellen (326 LOC – State, Effects, Mutations, Skill-Logik, Submit)
+- [x] `CertificateDetailsTab` extrahieren (273 LOC – File-Preview, Metadaten-Formular, Verifizierung)
+- [x] `CertificateSkillsTab` extrahieren (194 LOC – Skill-Mappings-Editor, Add/Remove/Update)
+- [x] `CertificateAdvancedTab` extrahieren (77 LOC – Kurs-Metadaten)
+- [x] `EditCertificateDialog.tsx` auf 160 LOC reduziert (Dialog-Shell + Tab-Routing)
+- [x] Shared Types/Interfaces in `edit-certificate/types.ts` ausgelagert (84 LOC)
+- [x] 31 Tests für refaktorierte Module geschrieben und bestanden (158 Tests gesamt)
