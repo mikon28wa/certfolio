@@ -7,7 +7,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 import * as skillsDb from "./skillsDb";
 import { analyzeCertificatePDF, analyzeCertificateWithSkills, analyzeProject } from "./llmService";
-import { storagePut } from "./storage";
+import { storagePut, storageGet } from "./storage";
 
 export const appRouter = router({
   system: systemRouter,
@@ -339,11 +339,34 @@ export const appRouter = router({
     
     analyzeWithSkills: protectedProcedure
       .input(z.object({
-        fileUrl: z.string().url(),
-        mimeType: z.string(),
+        fileKey: z.string().optional(),
+        externalUrl: z.string().url().optional(),
+      }).refine(data => data.fileKey || data.externalUrl, {
+        message: "Either fileKey or externalUrl must be provided",
       }))
       .mutation(async ({ input }) => {
-        const result = await analyzeCertificateWithSkills(input.fileUrl, input.mimeType);
+        let fileUrl: string;
+        let mimeType: string = "application/pdf"; // Default
+        
+        if (input.fileKey) {
+          // Get presigned URL from S3
+          const { url } = await storageGet(input.fileKey);
+          fileUrl = url;
+          // Infer mimeType from fileKey extension
+          if (input.fileKey.endsWith('.pdf')) mimeType = 'application/pdf';
+          else if (input.fileKey.endsWith('.jpg') || input.fileKey.endsWith('.jpeg')) mimeType = 'image/jpeg';
+          else if (input.fileKey.endsWith('.png')) mimeType = 'image/png';
+        } else if (input.externalUrl) {
+          fileUrl = input.externalUrl;
+          // Try to infer mimeType from URL
+          if (input.externalUrl.includes('.pdf')) mimeType = 'application/pdf';
+          else if (input.externalUrl.match(/\.(jpg|jpeg)$/i)) mimeType = 'image/jpeg';
+          else if (input.externalUrl.includes('.png')) mimeType = 'image/png';
+        } else {
+          throw new Error("Either fileKey or externalUrl must be provided");
+        }
+        
+        const result = await analyzeCertificateWithSkills(fileUrl, mimeType);
         return result;
       }),
     

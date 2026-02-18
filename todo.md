@@ -351,3 +351,19 @@
 - [x] Sitemap-Verweis in robots.txt eingefügt
 - [x] Crawl-Delay für höfliche Bots gesetzt (1 Sekunde)
 - [x] Prioritäten und Changefreq für jede URL definiert
+
+
+### Upload-Ansichten zusammenführen (Datei + Link)
+- [x] NewCertificate.tsx: Zwei getrennte Ansichten in eine Form zusammengeführt
+- [x] file-State und externalUrl-State optional gemacht
+- [x] Submit-Logik: Wenn file → S3-Upload + analyzeWithSkills({ fileKey }), sonst externalUrl → analyzeWithSkills({ externalUrl })
+- [x] Backend: analyzeWithSkills erweitert für Union { fileKey?: string; externalUrl?: string } mit Refinement
+- [x] Backend: storageGet-Import hinzugefügt für fileKey-zu-URL-Konvertierung
+- [x] EditCertificateDialog.tsx: "Mit KI analysieren"-Button für beide Quellen
+- [x] UX: Warnung (Alert), wenn beides gesetzt ist (Datei wird priorisiert)
+- [x] UX: Klarer Hinweistext ("Du kannst entweder eine Datei hochladen oder einen Link einfügen")
+- [x] Datei-Upload mit Drag & Drop und Vorschau
+- [x] Externer Link mit URL-Input
+- [x] Divider zwischen beiden Optionen
+- [ ] UX: Klarer Hinweistext ("Datei ODER Link")
+- [ ] UX: Hinweisbox bei beiden gesetzten Werten

@@ -206,15 +206,26 @@ export default function EditCertificateDialog({
   };
 
   const handleReanalyze = async () => {
-    if (!certificate?.fileUrl) {
-      toast.error("Keine Datei zum Analysieren vorhanden");
+    if (!certificate?.fileUrl && !certificate?.externalUrl) {
+      toast.error("Keine Datei oder Link zum Analysieren vorhanden");
       return;
     }
     setIsAnalyzing(true);
     try {
+      // Extract fileKey from fileUrl if available
+      let fileKey: string | undefined;
+      if (certificate.fileUrl) {
+        // Extract key from S3 URL (format: https://.../{fileKey})
+        const urlParts = certificate.fileUrl.split('/');
+        const keyStartIndex = urlParts.findIndex(part => part.includes('-certificates'));
+        if (keyStartIndex !== -1) {
+          fileKey = urlParts.slice(keyStartIndex).join('/');
+        }
+      }
+      
       const result = await analyzeMutation.mutateAsync({
-        fileUrl: certificate.fileUrl,
-        mimeType: certificate.mimeType || "application/pdf",
+        fileKey,
+        externalUrl: certificate.externalUrl || undefined,
       });
       if (result) {
         if (result.title) setTitle(result.title);

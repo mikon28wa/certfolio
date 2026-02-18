@@ -7,18 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { Upload, Loader2, FileText, Link as LinkIcon, X } from "lucide-react";
+import { Upload, Loader2, FileText, Link as LinkIcon, X, AlertCircle } from "lucide-react";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
-
-
-type UploadMode = "file" | "link";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function NewCertificate() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
-  const [uploadMode, setUploadMode] = useState<UploadMode>("file");
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -103,18 +100,31 @@ export default function NewCertificate() {
   };
 
   const handleAnalyze = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile && !externalUrl) {
+      toast.error("Bitte wähle eine Datei oder gib einen Link ein");
+      return;
+    }
     
     setIsAnalyzing(true);
     try {
-      // Upload file first
-      const { url: fileUrl } = await uploadFileToS3(selectedFile);
+      let analysis;
       
-      // Analyze with LLM (extended analysis with skills)
-      const analysis = await analyzeWithSkills.mutateAsync({
-        fileUrl,
-        mimeType: selectedFile.type,
-      });
+      if (selectedFile) {
+        // Upload file first
+        const { key: fileKey } = await uploadFileToS3(selectedFile);
+        
+        // Analyze with LLM using fileKey
+        analysis = await analyzeWithSkills.mutateAsync({
+          fileKey,
+        });
+      } else if (externalUrl) {
+        // Analyze with LLM using externalUrl
+        analysis = await analyzeWithSkills.mutateAsync({
+          externalUrl,
+        });
+      }
+      
+      if (!analysis) return;
       
       // Fill form with extracted data
       setTitle(analysis.title);
@@ -175,13 +185,8 @@ export default function NewCertificate() {
       return;
     }
     
-    if (uploadMode === "file" && !selectedFile) {
-      toast.error("Bitte wähle eine Datei aus");
-      return;
-    }
-    
-    if (uploadMode === "link" && !externalUrl) {
-      toast.error("Bitte gib einen Link ein");
+    if (!selectedFile && !externalUrl) {
+      toast.error("Bitte wähle eine Datei oder gib einen Link ein");
       return;
     }
     
@@ -192,7 +197,7 @@ export default function NewCertificate() {
       let fileName: string | undefined;
       let mimeType: string | undefined;
       
-      if (uploadMode === "file" && selectedFile) {
+      if (selectedFile) {
         const uploadResult = await uploadFileToS3(selectedFile);
         fileUrl = uploadResult.url;
         fileKey = uploadResult.key;
@@ -216,7 +221,7 @@ export default function NewCertificate() {
         fileKey,
         fileName,
         mimeType,
-        externalUrl: uploadMode === "link" ? externalUrl : undefined,
+        externalUrl: externalUrl || undefined,
         isPublic,
         // Extended metadata
         courseUuid: courseUuid || undefined,
@@ -238,6 +243,9 @@ export default function NewCertificate() {
     }
   };
 
+  // Check if both file and link are set
+  const hasBothSources = selectedFile !== null && externalUrl.trim() !== "";
+
   return (
     <div className="min-h-screen">
       <div className="border-b border-border/50 bg-card/30 backdrop-blur-sm">
@@ -250,53 +258,30 @@ export default function NewCertificate() {
 
       <div className="container py-8 max-w-4xl">
         <form onSubmit={handleSubmit}>
-          {/* Upload Mode Selection */}
+          {/* Upload Section - Combined File + Link */}
           <Card className="border-2 border-border/50 bg-card/50 backdrop-blur-sm mb-6">
             <CardHeader>
-              <CardTitle>Upload-Methode</CardTitle>
-              <CardDescription>Wähle, wie du dein Zertifikat hinzufügen möchtest</CardDescription>
+              <CardTitle>Zertifikat hinzufügen</CardTitle>
+              <CardDescription>
+                Du kannst entweder eine Datei hochladen oder einen Link zum Zertifikat einfügen
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex gap-4">
-                <Button
-                  type="button"
-                  variant={uploadMode === "file" ? "default" : "outline"}
-                  onClick={() => setUploadMode("file")}
-                  className="flex-1"
-                >
-                  <FileText className="mr-2 h-4 w-4" />
+            <CardContent className="space-y-6">
+              {/* File Upload */}
+              <div>
+                <Label className="text-base font-semibold mb-3 block">
+                  <FileText className="inline h-4 w-4 mr-2" />
                   Datei hochladen
-                </Button>
-                <Button
-                  type="button"
-                  variant={uploadMode === "link" ? "default" : "outline"}
-                  onClick={() => setUploadMode("link")}
-                  className="flex-1"
-                >
-                  <LinkIcon className="mr-2 h-4 w-4" />
-                  Externer Link
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* File Upload */}
-          {uploadMode === "file" && (
-            <Card className="border-2 border-border/50 bg-card/50 backdrop-blur-sm mb-6">
-              <CardHeader>
-                <CardTitle>Datei hochladen</CardTitle>
-                <CardDescription>PDF, JPG oder PNG (max. 10MB)</CardDescription>
-              </CardHeader>
-              <CardContent>
+                </Label>
                 {!selectedFile ? (
                   <div
                     onDrop={handleDrop}
                     onDragOver={(e) => e.preventDefault()}
-                    className="border-2 border-dashed border-border/50 rounded-lg p-12 text-center hover:border-accent/50 transition-colors cursor-pointer"
+                    className="border-2 border-dashed border-border/50 rounded-lg p-8 text-center hover:border-accent/50 transition-colors cursor-pointer"
                     onClick={() => document.getElementById("file-input")?.click()}
                   >
-                    <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-lg font-medium mb-2">Datei hierher ziehen oder klicken</p>
+                    <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+                    <p className="font-medium mb-1">Datei hierher ziehen oder klicken</p>
                     <p className="text-sm text-muted-foreground">PDF, JPG, PNG bis 10MB</p>
                     <input
                       id="file-input"
@@ -307,13 +292,13 @@ export default function NewCertificate() {
                     />
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 border border-border/50 rounded-lg bg-background/30">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 border border-border/50 rounded-lg bg-background/30">
                       <div className="flex items-center gap-3">
-                        <FileText className="h-8 w-8 text-accent" />
+                        <FileText className="h-6 w-6 text-accent" />
                         <div>
-                          <p className="font-medium">{selectedFile.name}</p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="font-medium text-sm">{selectedFile.name}</p>
+                          <p className="text-xs text-muted-foreground">
                             {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                           </p>
                         </div>
@@ -332,54 +317,76 @@ export default function NewCertificate() {
                     </div>
                     
                     {filePreview && (
-                      <div className="border border-border/50 rounded-lg overflow-hidden">
+                      <div className="border border-border/50 rounded-lg overflow-hidden max-h-64">
                         <img src={filePreview} alt="Vorschau" className="w-full h-auto" />
                       </div>
                     )}
-                    
-                    <Button
-                      type="button"
-                      onClick={handleAnalyze}
-                      disabled={isAnalyzing}
-                      className="w-full"
-                    >
-                      {isAnalyzing ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Analysiere...
-                        </>
-                      ) : (
-                        <>
-                          <FileText className="mr-2 h-4 w-4" />
-                          Automatisch analysieren (LLM)
-                        </>
-                      )}
-                    </Button>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          )}
+              </div>
 
-          {/* External Link */}
-          {uploadMode === "link" && (
-            <Card className="border-2 border-border/50 bg-card/50 backdrop-blur-sm mb-6">
-              <CardHeader>
-                <CardTitle>Externer Link</CardTitle>
-                <CardDescription>
-                  Link zu deinem Zertifikat (z.B. von Coursera, edX, Udemy)
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border/50"></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">oder</span>
+                </div>
+              </div>
+
+              {/* External Link */}
+              <div>
+                <Label htmlFor="externalUrl" className="text-base font-semibold mb-3 block">
+                  <LinkIcon className="inline h-4 w-4 mr-2" />
+                  Externer Link
+                </Label>
                 <Input
+                  id="externalUrl"
                   type="url"
                   placeholder="https://www.coursera.org/account/accomplishments/..."
                   value={externalUrl}
                   onChange={(e) => setExternalUrl(e.target.value)}
                 />
-              </CardContent>
-            </Card>
-          )}
+                <p className="text-xs text-muted-foreground mt-2">
+                  Link zu deinem Zertifikat (z.B. von Coursera, edX, Udemy)
+                </p>
+              </div>
+
+              {/* Warning if both are set */}
+              {hasBothSources && (
+                <Alert variant="default" className="border-amber-500/50 bg-amber-500/10">
+                  <AlertCircle className="h-4 w-4 text-amber-500" />
+                  <AlertDescription className="text-sm">
+                    Du hast sowohl eine Datei als auch einen Link angegeben. Bei der Analyse wird die <strong>Datei priorisiert</strong>.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Analyze Button */}
+              {(selectedFile || externalUrl) && (
+                <Button
+                  type="button"
+                  onClick={handleAnalyze}
+                  disabled={isAnalyzing}
+                  className="w-full"
+                  variant="secondary"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Analysiere...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="mr-2 h-4 w-4" />
+                      Automatisch analysieren (KI)
+                    </>
+                  )}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Certificate Details */}
           <Card className="border-2 border-border/50 bg-card/50 backdrop-blur-sm mb-6">
