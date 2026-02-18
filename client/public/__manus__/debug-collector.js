@@ -12,44 +12,24 @@
 (function () {
   "use strict";
 
-  // Prevent double initialization
   if (window.__MANUS_DEBUG_COLLECTOR__) return;
 
   // ==========================================================================
-  // Configuration
+  // Configuration & Storage
   // ==========================================================================
-  const CONFIG = {
+
+  var CONFIG = {
     reportEndpoint: "/__manus__/logs",
-    bufferSize: {
-      console: 500,
-      network: 200,
-      // semantic, agent-friendly UI events
-      ui: 500,
-    },
+    bufferSize: { console: 500, network: 200, ui: 500 },
     reportInterval: 2000,
-    sensitiveFields: [
-      "password",
-      "token",
-      "secret",
-      "key",
-      "authorization",
-      "cookie",
-      "session",
-    ],
+    sensitiveFields: ["password", "token", "secret", "key", "authorization", "cookie", "session"],
     maxBodyLength: 10240,
-    // UI event logging privacy policy:
-    // - inputs matching sensitiveFields or type=password are masked by default
-    // - non-sensitive inputs log up to 200 chars
     uiInputMaxLen: 200,
     uiTextMaxLen: 80,
-    // Scroll throttling: minimum ms between scroll events
     scrollThrottleMs: 500,
   };
 
-  // ==========================================================================
-  // Storage
-  // ==========================================================================
-  const store = {
+  var store = {
     consoleLogs: [],
     networkRequests: [],
     uiEvents: [],
@@ -58,48 +38,34 @@
   };
 
   // ==========================================================================
-  // Utility Functions
+  // Shared Utilities
   // ==========================================================================
 
   function sanitizeValue(value, depth) {
     if (depth === void 0) depth = 0;
     if (depth > 5) return "[Max Depth]";
-    if (value === null) return null;
-    if (value === undefined) return undefined;
-
+    if (value == null) return value;
     if (typeof value === "string") {
       return value.length > 1000 ? value.slice(0, 1000) + "...[truncated]" : value;
     }
-
     if (typeof value !== "object") return value;
-
     if (Array.isArray(value)) {
-      return value.slice(0, 100).map(function (v) {
-        return sanitizeValue(v, depth + 1);
-      });
+      return value.slice(0, 100).map(function (v) { return sanitizeValue(v, depth + 1); });
     }
-
-    var sanitized = {};
+    var out = {};
     for (var k in value) {
-      if (Object.prototype.hasOwnProperty.call(value, k)) {
-        var isSensitive = CONFIG.sensitiveFields.some(function (f) {
-          return k.toLowerCase().indexOf(f) !== -1;
-        });
-        if (isSensitive) {
-          sanitized[k] = "[REDACTED]";
-        } else {
-          sanitized[k] = sanitizeValue(value[k], depth + 1);
-        }
-      }
+      if (!Object.prototype.hasOwnProperty.call(value, k)) continue;
+      var isSensitive = CONFIG.sensitiveFields.some(function (f) {
+        return k.toLowerCase().indexOf(f) !== -1;
+      });
+      out[k] = isSensitive ? "[REDACTED]" : sanitizeValue(value[k], depth + 1);
     }
-    return sanitized;
+    return out;
   }
 
   function formatArg(arg) {
     try {
-      if (arg instanceof Error) {
-        return { type: "Error", message: arg.message, stack: arg.stack };
-      }
+      if (arg instanceof Error) return { type: "Error", message: arg.message, stack: arg.stack };
       if (typeof arg === "object") return sanitizeValue(arg);
       return String(arg);
     } catch (e) {
@@ -119,15 +85,59 @@
 
   function tryParseJson(str) {
     if (typeof str !== "string") return str;
-    try {
-      return JSON.parse(str);
-    } catch (e) {
-      return str;
+    try { return JSON.parse(str); } catch (e) { return str; }
+  }
+
+  /** Classify a Content-Type header for body-capture decisions. */
+  function classifyContentType(contentType) {
+    var ct = (contentType || "").toLowerCase();
+    return {
+      isStreaming:
+        ct.indexOf("text/event-stream") !== -1 ||
+        ct.indexOf("application/stream") !== -1 ||
+        ct.indexOf("application/x-ndjson") !== -1,
+      isBinary:
+        ct.indexOf("image/") !== -1 ||
+        ct.indexOf("video/") !== -1 ||
+        ct.indexOf("audio/") !== -1 ||
+        ct.indexOf("application/octet-stream") !== -1 ||
+        ct.indexOf("application/pdf") !== -1 ||
+        ct.indexOf("application/zip") !== -1,
+    };
+  }
+
+  /** Decide whether to skip body capture; returns a placeholder string or null. */
+  function skipBodyReason(contentType, contentLength) {
+    var ct = classifyContentType(contentType);
+    if (ct.isStreaming) return "[Streaming response - not captured]";
+    if (ct.isBinary) return "[Binary content: " + contentType + "]";
+    if (contentLength && parseInt(contentLength, 10) > CONFIG.maxBodyLength) {
+      return "[Response too large: " + contentLength + " bytes]";
     }
+    return null;
+  }
+
+  /** Truncate a text body to CONFIG.maxBodyLength, then sanitize. */
+  function captureTextBody(text) {
+    if (text.length > CONFIG.maxBodyLength) {
+      return text.slice(0, CONFIG.maxBodyLength) + "...[truncated]";
+    }
+    return sanitizeValue(tryParseJson(text));
+  }
+
+  /** Build the reporting payload from current store buffers. */
+  function buildPayload(consoleLogs, networkRequests, uiEvents) {
+    return {
+      timestamp: Date.now(),
+      consoleLogs: consoleLogs,
+      networkRequests: networkRequests,
+      sessionEvents: uiEvents,
+      uiEvents: uiEvents,
+    };
   }
 
   // ==========================================================================
-  // Semantic UI Event Logging (agent-friendly)
+  // UI Event Logging (agent-friendly semantic events)
   // ==========================================================================
 
   function shouldIgnoreTarget(target) {
@@ -142,17 +152,7 @@
   function compactText(s, maxLen) {
     try {
       var t = (s || "").trim().replace(/\s+/g, " ");
-      if (!t) return "";
-      return t.length > maxLen ? t.slice(0, maxLen) + "…" : t;
-    } catch (e) {
-      return "";
-    }
-  }
-
-  function elText(el) {
-    try {
-      var t = el.innerText || el.textContent || "";
-      return compactText(t, CONFIG.uiTextMaxLen);
+      return !t ? "" : (t.length > maxLen ? t.slice(0, maxLen) + "\u2026" : t);
     } catch (e) {
       return "";
     }
@@ -160,45 +160,29 @@
 
   function describeElement(el) {
     if (!el || !(el instanceof Element)) return null;
-
-    var getAttr = function (name) {
-      return el.getAttribute(name);
-    };
-
+    var attr = function (n) { return el.getAttribute(n); };
     var tag = el.tagName ? el.tagName.toLowerCase() : null;
     var id = el.id || null;
-    var name = getAttr("name") || null;
-    var role = getAttr("role") || null;
-    var ariaLabel = getAttr("aria-label") || null;
+    var testId = attr("data-testid") || attr("data-test-id") || attr("data-test") || null;
+    var dataLoc = attr("data-loc") || null;
 
-    var dataLoc = getAttr("data-loc") || null;
-    var testId =
-      getAttr("data-testid") ||
-      getAttr("data-test-id") ||
-      getAttr("data-test") ||
-      null;
-
-    var type = tag === "input" ? (getAttr("type") || "text") : null;
-    var href = tag === "a" ? getAttr("href") || null : null;
-
-    // a small, stable hint for agents (avoid building full CSS paths)
-    var selectorHint = null;
-    if (testId) selectorHint = '[data-testid="' + testId + '"]';
-    else if (dataLoc) selectorHint = '[data-loc="' + dataLoc + '"]';
-    else if (id) selectorHint = "#" + id;
-    else selectorHint = tag || "unknown";
+    var selectorHint = testId
+      ? '[data-testid="' + testId + '"]'
+      : dataLoc ? '[data-loc="' + dataLoc + '"]'
+      : id ? "#" + id
+      : tag || "unknown";
 
     return {
       tag: tag,
       id: id,
-      name: name,
-      type: type,
-      role: role,
-      ariaLabel: ariaLabel,
+      name: attr("name") || null,
+      type: tag === "input" ? (attr("type") || "text") : null,
+      role: attr("role") || null,
+      ariaLabel: attr("aria-label") || null,
       testId: testId,
       dataLoc: dataLoc,
-      href: href,
-      text: elText(el),
+      href: tag === "a" ? (attr("href") || null) : null,
+      text: compactText((el.innerText || el.textContent || ""), CONFIG.uiTextMaxLen),
       selectorHint: selectorHint,
     };
   }
@@ -207,13 +191,9 @@
     if (!el || !(el instanceof Element)) return false;
     var tag = el.tagName ? el.tagName.toLowerCase() : "";
     if (tag !== "input" && tag !== "textarea") return false;
-
-    var type = (el.getAttribute("type") || "").toLowerCase();
-    if (type === "password") return true;
-
+    if ((el.getAttribute("type") || "").toLowerCase() === "password") return true;
     var name = (el.getAttribute("name") || "").toLowerCase();
     var id = (el.id || "").toLowerCase();
-
     return CONFIG.sensitiveFields.some(function (f) {
       return name.indexOf(f) !== -1 || id.indexOf(f) !== -1;
     });
@@ -223,200 +203,130 @@
     if (!el || !(el instanceof Element)) return null;
     var tag = el.tagName ? el.tagName.toLowerCase() : "";
     if (tag !== "input" && tag !== "textarea" && tag !== "select") return null;
-
     var v = "";
-    try {
-      v = el.value != null ? String(el.value) : "";
-    } catch (e) {
-      v = "";
-    }
-
+    try { v = el.value != null ? String(el.value) : ""; } catch (e) { v = ""; }
     if (isSensitiveField(el)) return { masked: true, length: v.length };
-
-    if (v.length > CONFIG.uiInputMaxLen) v = v.slice(0, CONFIG.uiInputMaxLen) + "…";
-    return v;
+    return v.length > CONFIG.uiInputMaxLen ? v.slice(0, CONFIG.uiInputMaxLen) + "\u2026" : v;
   }
 
   function logUiEvent(kind, payload) {
-    var entry = {
+    store.uiEvents.push({
       timestamp: Date.now(),
       kind: kind,
       url: location.href,
       viewport: { width: window.innerWidth, height: window.innerHeight },
       payload: sanitizeValue(payload),
-    };
-    store.uiEvents.push(entry);
+    });
     pruneBuffer(store.uiEvents, CONFIG.bufferSize.ui);
   }
 
+  function logNetworkError(kind, method, url, extra) {
+    logUiEvent("network_error", Object.assign({ kind: kind, method: method, url: url }, extra));
+  }
+
   function installUiEventListeners() {
-    // Clicks
-    document.addEventListener(
-      "click",
-      function (e) {
-        var t = e.target;
-        if (shouldIgnoreTarget(t)) return;
-        logUiEvent("click", {
-          target: describeElement(t),
-          x: e.clientX,
-          y: e.clientY,
-        });
-      },
-      true
-    );
-
-    // Typing "commit" events
-    document.addEventListener(
-      "change",
-      function (e) {
-        var t = e.target;
-        if (shouldIgnoreTarget(t)) return;
-        logUiEvent("change", {
-          target: describeElement(t),
-          value: getInputValueSafe(t),
-        });
-      },
-      true
-    );
-
-    document.addEventListener(
-      "focusin",
-      function (e) {
-        var t = e.target;
-        if (shouldIgnoreTarget(t)) return;
-        logUiEvent("focusin", { target: describeElement(t) });
-      },
-      true
-    );
-
-    document.addEventListener(
-      "focusout",
-      function (e) {
-        var t = e.target;
-        if (shouldIgnoreTarget(t)) return;
-        logUiEvent("focusout", {
-          target: describeElement(t),
-          value: getInputValueSafe(t),
-        });
-      },
-      true
-    );
-
-    // Enter/Escape are useful for form flows & modals
-    document.addEventListener(
-      "keydown",
-      function (e) {
-        if (e.key !== "Enter" && e.key !== "Escape") return;
-        var t = e.target;
-        if (shouldIgnoreTarget(t)) return;
-        logUiEvent("keydown", { key: e.key, target: describeElement(t) });
-      },
-      true
-    );
-
-    // Form submissions
-    document.addEventListener(
-      "submit",
-      function (e) {
-        var t = e.target;
-        if (shouldIgnoreTarget(t)) return;
-        logUiEvent("submit", { target: describeElement(t) });
-      },
-      true
-    );
-
-    // Throttled scroll events
-    window.addEventListener(
-      "scroll",
-      function () {
-        var now = Date.now();
-        if (now - store.lastScrollTime < CONFIG.scrollThrottleMs) return;
-        store.lastScrollTime = now;
-
-        logUiEvent("scroll", {
-          scrollX: window.scrollX,
-          scrollY: window.scrollY,
-          documentHeight: document.documentElement.scrollHeight,
-          viewportHeight: window.innerHeight,
-        });
-      },
-      { passive: true }
-    );
-
-    // Navigation tracking for SPAs
-    function nav(reason) {
-      logUiEvent("navigate", { reason: reason });
+    function on(target, event, handler, opts) {
+      target.addEventListener(event, handler, opts || true);
     }
 
+    on(document, "click", function (e) {
+      var t = e.target;
+      if (shouldIgnoreTarget(t)) return;
+      logUiEvent("click", { target: describeElement(t), x: e.clientX, y: e.clientY });
+    });
+
+    on(document, "change", function (e) {
+      var t = e.target;
+      if (shouldIgnoreTarget(t)) return;
+      logUiEvent("change", { target: describeElement(t), value: getInputValueSafe(t) });
+    });
+
+    on(document, "focusin", function (e) {
+      var t = e.target;
+      if (shouldIgnoreTarget(t)) return;
+      logUiEvent("focusin", { target: describeElement(t) });
+    });
+
+    on(document, "focusout", function (e) {
+      var t = e.target;
+      if (shouldIgnoreTarget(t)) return;
+      logUiEvent("focusout", { target: describeElement(t), value: getInputValueSafe(t) });
+    });
+
+    on(document, "keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== "Escape") return;
+      var t = e.target;
+      if (shouldIgnoreTarget(t)) return;
+      logUiEvent("keydown", { key: e.key, target: describeElement(t) });
+    });
+
+    on(document, "submit", function (e) {
+      var t = e.target;
+      if (shouldIgnoreTarget(t)) return;
+      logUiEvent("submit", { target: describeElement(t) });
+    });
+
+    on(window, "scroll", function () {
+      var now = Date.now();
+      if (now - store.lastScrollTime < CONFIG.scrollThrottleMs) return;
+      store.lastScrollTime = now;
+      logUiEvent("scroll", {
+        scrollX: window.scrollX,
+        scrollY: window.scrollY,
+        documentHeight: document.documentElement.scrollHeight,
+        viewportHeight: window.innerHeight,
+      });
+    }, { passive: true });
+
+    // SPA navigation tracking
+    function nav(reason) { logUiEvent("navigate", { reason: reason }); }
+
     var origPush = history.pushState;
-    history.pushState = function () {
-      origPush.apply(this, arguments);
-      nav("pushState");
-    };
+    history.pushState = function () { origPush.apply(this, arguments); nav("pushState"); };
 
     var origReplace = history.replaceState;
-    history.replaceState = function () {
-      origReplace.apply(this, arguments);
-      nav("replaceState");
-    };
+    history.replaceState = function () { origReplace.apply(this, arguments); nav("replaceState"); };
 
-    window.addEventListener("popstate", function () {
-      nav("popstate");
-    });
-    window.addEventListener("hashchange", function () {
-      nav("hashchange");
-    });
+    on(window, "popstate", function () { nav("popstate"); });
+    on(window, "hashchange", function () { nav("hashchange"); });
   }
 
   // ==========================================================================
   // Console Interception
   // ==========================================================================
 
-  var originalConsole = {
-    log: console.log.bind(console),
-    debug: console.debug.bind(console),
-    info: console.info.bind(console),
-    warn: console.warn.bind(console),
-    error: console.error.bind(console),
-  };
-
+  var originalConsole = {};
   ["log", "debug", "info", "warn", "error"].forEach(function (method) {
+    originalConsole[method] = console[method].bind(console);
     console[method] = function () {
       var args = Array.prototype.slice.call(arguments);
-
-      var entry = {
+      store.consoleLogs.push({
         timestamp: Date.now(),
         level: method.toUpperCase(),
         args: formatArgs(args),
         stack: method === "error" ? new Error().stack : null,
-      };
-
-      store.consoleLogs.push(entry);
+      });
       pruneBuffer(store.consoleLogs, CONFIG.bufferSize.console);
-
       originalConsole[method].apply(console, args);
     };
   });
 
-  window.addEventListener("error", function (event) {
+  function logConsoleError(type, message, stack, extra) {
     store.consoleLogs.push({
       timestamp: Date.now(),
       level: "ERROR",
-      args: [
-        {
-          type: "UncaughtError",
-          message: event.message,
-          filename: event.filename,
-          lineno: event.lineno,
-          colno: event.colno,
-          stack: event.error ? event.error.stack : null,
-        },
-      ],
-      stack: event.error ? event.error.stack : null,
+      args: [Object.assign({ type: type, message: message, stack: stack }, extra)],
+      stack: stack,
     });
     pruneBuffer(store.consoleLogs, CONFIG.bufferSize.console);
+  }
 
-    // Mark an error moment in UI event stream for agents
+  window.addEventListener("error", function (event) {
+    logConsoleError("UncaughtError", event.message, event.error ? event.error.stack : null, {
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+    });
     logUiEvent("error", {
       message: event.message,
       filename: event.filename,
@@ -427,23 +337,10 @@
 
   window.addEventListener("unhandledrejection", function (event) {
     var reason = event.reason;
-    store.consoleLogs.push({
-      timestamp: Date.now(),
-      level: "ERROR",
-      args: [
-        {
-          type: "UnhandledRejection",
-          reason: reason && reason.message ? reason.message : String(reason),
-          stack: reason && reason.stack ? reason.stack : null,
-        },
-      ],
-      stack: reason && reason.stack ? reason.stack : null,
-    });
-    pruneBuffer(store.consoleLogs, CONFIG.bufferSize.console);
-
-    logUiEvent("unhandledrejection", {
-      reason: reason && reason.message ? reason.message : String(reason),
-    });
+    var msg = reason && reason.message ? reason.message : String(reason);
+    var stack = reason && reason.stack ? reason.stack : null;
+    logConsoleError("UnhandledRejection", msg, stack);
+    logUiEvent("unhandledrejection", { reason: msg });
   });
 
   // ==========================================================================
@@ -455,23 +352,16 @@
   window.fetch = function (input, init) {
     init = init || {};
     var startTime = Date.now();
-    // Handle string, Request object, or URL object
     var url = typeof input === "string"
       ? input
       : (input && (input.url || input.href || String(input))) || "";
-    var method = init.method || (input && input.method) || "GET";
+    var method = (init.method || (input && input.method) || "GET").toUpperCase();
 
-    // Don't intercept internal requests
-    if (url.indexOf("/__manus__/") === 0) {
-      return originalFetch(input, init);
-    }
+    if (url.indexOf("/__manus__/") === 0) return originalFetch(input, init);
 
-    // Safely parse headers (avoid breaking if headers format is invalid)
     var requestHeaders = {};
     try {
-      if (init.headers) {
-        requestHeaders = Object.fromEntries(new Headers(init.headers).entries());
-      }
+      if (init.headers) requestHeaders = Object.fromEntries(new Headers(init.headers).entries());
     } catch (e) {
       requestHeaders = { _parseError: true };
     }
@@ -479,7 +369,7 @@
     var entry = {
       timestamp: startTime,
       type: "fetch",
-      method: method.toUpperCase(),
+      method: method,
       url: url,
       request: {
         headers: requestHeaders,
@@ -493,8 +383,7 @@
     return originalFetch(input, init)
       .then(function (response) {
         entry.duration = Date.now() - startTime;
-
-        var contentType = (response.headers.get("content-type") || "").toLowerCase();
+        var contentType = response.headers.get("content-type") || "";
         var contentLength = response.headers.get("content-length");
 
         entry.response = {
@@ -504,88 +393,38 @@
           body: null,
         };
 
-        // Semantic network hint for agents on failures (sync, no need to wait for body)
         if (response.status >= 400) {
-          logUiEvent("network_error", {
-            kind: "fetch",
-            method: entry.method,
-            url: entry.url,
+          logNetworkError("fetch", method, url, {
             status: response.status,
             statusText: response.statusText,
           });
         }
 
-        // Skip body capture for streaming responses (SSE, etc.) to avoid memory leaks
-        var isStreaming = contentType.indexOf("text/event-stream") !== -1 ||
-                          contentType.indexOf("application/stream") !== -1 ||
-                          contentType.indexOf("application/x-ndjson") !== -1;
-        if (isStreaming) {
-          entry.response.body = "[Streaming response - not captured]";
+        var skip = skipBodyReason(contentType, contentLength);
+        if (skip) {
+          entry.response.body = skip;
           store.networkRequests.push(entry);
           pruneBuffer(store.networkRequests, CONFIG.bufferSize.network);
           return response;
         }
 
-        // Skip body capture for large responses to avoid memory issues
-        if (contentLength && parseInt(contentLength, 10) > CONFIG.maxBodyLength) {
-          entry.response.body = "[Response too large: " + contentLength + " bytes]";
-          store.networkRequests.push(entry);
-          pruneBuffer(store.networkRequests, CONFIG.bufferSize.network);
-          return response;
-        }
-
-        // Skip body capture for binary content types
-        var isBinary = contentType.indexOf("image/") !== -1 ||
-                       contentType.indexOf("video/") !== -1 ||
-                       contentType.indexOf("audio/") !== -1 ||
-                       contentType.indexOf("application/octet-stream") !== -1 ||
-                       contentType.indexOf("application/pdf") !== -1 ||
-                       contentType.indexOf("application/zip") !== -1;
-        if (isBinary) {
-          entry.response.body = "[Binary content: " + contentType + "]";
-          store.networkRequests.push(entry);
-          pruneBuffer(store.networkRequests, CONFIG.bufferSize.network);
-          return response;
-        }
-
-        // For text responses, clone and read body in background
         var clonedResponse = response.clone();
-
-        // Async: read body in background, don't block the response
-        clonedResponse
-          .text()
-          .then(function (text) {
-            if (text.length <= CONFIG.maxBodyLength) {
-              entry.response.body = sanitizeValue(tryParseJson(text));
-            } else {
-              entry.response.body = text.slice(0, CONFIG.maxBodyLength) + "...[truncated]";
-            }
-          })
-          .catch(function () {
-            entry.response.body = "[Unable to read body]";
-          })
+        clonedResponse.text()
+          .then(function (text) { entry.response.body = captureTextBody(text); })
+          .catch(function () { entry.response.body = "[Unable to read body]"; })
           .finally(function () {
             store.networkRequests.push(entry);
             pruneBuffer(store.networkRequests, CONFIG.bufferSize.network);
           });
 
-        // Return response immediately, don't wait for body reading
         return response;
       })
       .catch(function (error) {
         entry.duration = Date.now() - startTime;
         entry.error = { message: error.message, stack: error.stack };
-
         store.networkRequests.push(entry);
         pruneBuffer(store.networkRequests, CONFIG.bufferSize.network);
-
-        logUiEvent("network_error", {
-          kind: "fetch",
-          method: entry.method,
-          url: entry.url,
-          message: error.message,
-        });
-
+        logNetworkError("fetch", method, url, { message: error.message });
         throw error;
       });
   };
@@ -598,57 +437,27 @@
   var originalXHRSend = XMLHttpRequest.prototype.send;
 
   XMLHttpRequest.prototype.open = function (method, url) {
-    this._manusData = {
-      method: (method || "GET").toUpperCase(),
-      url: url,
-      startTime: null,
-    };
+    this._manusData = { method: (method || "GET").toUpperCase(), url: url, startTime: null };
     return originalXHROpen.apply(this, arguments);
   };
 
   XMLHttpRequest.prototype.send = function (body) {
     var xhr = this;
-
-    if (
-      xhr._manusData &&
-      xhr._manusData.url &&
-      xhr._manusData.url.indexOf("/__manus__/") !== 0
-    ) {
+    if (xhr._manusData && xhr._manusData.url && xhr._manusData.url.indexOf("/__manus__/") !== 0) {
       xhr._manusData.startTime = Date.now();
       xhr._manusData.requestBody = body ? sanitizeValue(tryParseJson(body)) : null;
 
       xhr.addEventListener("load", function () {
-        var contentType = (xhr.getResponseHeader("content-type") || "").toLowerCase();
-        var responseBody = null;
+        var contentType = xhr.getResponseHeader("content-type") || "";
+        var skip = skipBodyReason(contentType, null);
+        var responseBody;
 
-        // Skip body capture for streaming responses
-        var isStreaming = contentType.indexOf("text/event-stream") !== -1 ||
-                          contentType.indexOf("application/stream") !== -1 ||
-                          contentType.indexOf("application/x-ndjson") !== -1;
-
-        // Skip body capture for binary content types
-        var isBinary = contentType.indexOf("image/") !== -1 ||
-                       contentType.indexOf("video/") !== -1 ||
-                       contentType.indexOf("audio/") !== -1 ||
-                       contentType.indexOf("application/octet-stream") !== -1 ||
-                       contentType.indexOf("application/pdf") !== -1 ||
-                       contentType.indexOf("application/zip") !== -1;
-
-        if (isStreaming) {
-          responseBody = "[Streaming response - not captured]";
-        } else if (isBinary) {
-          responseBody = "[Binary content: " + contentType + "]";
+        if (skip) {
+          responseBody = skip;
         } else {
-          // Safe to read responseText for text responses
           try {
-            var text = xhr.responseText || "";
-            if (text.length > CONFIG.maxBodyLength) {
-              responseBody = text.slice(0, CONFIG.maxBodyLength) + "...[truncated]";
-            } else {
-              responseBody = sanitizeValue(tryParseJson(text));
-            }
+            responseBody = captureTextBody(xhr.responseText || "");
           } catch (e) {
-            // responseText may throw for non-text responses
             responseBody = "[Unable to read response: " + e.message + "]";
           }
         }
@@ -659,11 +468,7 @@
           method: xhr._manusData.method,
           url: xhr._manusData.url,
           request: { body: xhr._manusData.requestBody },
-          response: {
-            status: xhr.status,
-            statusText: xhr.statusText,
-            body: responseBody,
-          },
+          response: { status: xhr.status, statusText: xhr.statusText, body: responseBody },
           duration: Date.now() - xhr._manusData.startTime,
           error: null,
         };
@@ -671,13 +476,10 @@
         store.networkRequests.push(entry);
         pruneBuffer(store.networkRequests, CONFIG.bufferSize.network);
 
-        if (entry.response && entry.response.status >= 400) {
-          logUiEvent("network_error", {
-            kind: "xhr",
-            method: entry.method,
-            url: entry.url,
-            status: entry.response.status,
-            statusText: entry.response.statusText,
+        if (xhr.status >= 400) {
+          logNetworkError("xhr", entry.method, entry.url, {
+            status: xhr.status,
+            statusText: xhr.statusText,
           });
         }
       });
@@ -693,16 +495,9 @@
           duration: Date.now() - xhr._manusData.startTime,
           error: { message: "Network error" },
         };
-
         store.networkRequests.push(entry);
         pruneBuffer(store.networkRequests, CONFIG.bufferSize.network);
-
-        logUiEvent("network_error", {
-          kind: "xhr",
-          method: entry.method,
-          url: entry.url,
-          message: "Network error",
-        });
+        logNetworkError("xhr", entry.method, entry.url, { message: "Network error" });
       });
     }
 
@@ -718,82 +513,45 @@
     var networkRequests = store.networkRequests.splice(0);
     var uiEvents = store.uiEvents.splice(0);
 
-    // Skip if no new data
-    if (
-      consoleLogs.length === 0 &&
-      networkRequests.length === 0 &&
-      uiEvents.length === 0
-    ) {
+    if (consoleLogs.length === 0 && networkRequests.length === 0 && uiEvents.length === 0) {
       return Promise.resolve();
     }
-
-    var payload = {
-      timestamp: Date.now(),
-      consoleLogs: consoleLogs,
-      networkRequests: networkRequests,
-      // Mirror uiEvents to sessionEvents for sessionReplay.log
-      sessionEvents: uiEvents,
-      // agent-friendly semantic events
-      uiEvents: uiEvents,
-    };
 
     return originalFetch(CONFIG.reportEndpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(buildPayload(consoleLogs, networkRequests, uiEvents)),
     }).catch(function () {
-      // Put data back on failure (but respect limits)
       store.consoleLogs = consoleLogs.concat(store.consoleLogs);
       store.networkRequests = networkRequests.concat(store.networkRequests);
       store.uiEvents = uiEvents.concat(store.uiEvents);
-
       pruneBuffer(store.consoleLogs, CONFIG.bufferSize.console);
       pruneBuffer(store.networkRequests, CONFIG.bufferSize.network);
       pruneBuffer(store.uiEvents, CONFIG.bufferSize.ui);
     });
   }
 
-  // Periodic reporting
   setInterval(reportLogs, CONFIG.reportInterval);
 
-  // Report on page unload
   window.addEventListener("beforeunload", function () {
     var consoleLogs = store.consoleLogs;
     var networkRequests = store.networkRequests;
     var uiEvents = store.uiEvents;
 
-    if (
-      consoleLogs.length === 0 &&
-      networkRequests.length === 0 &&
-      uiEvents.length === 0
-    ) {
-      return;
-    }
+    if (consoleLogs.length === 0 && networkRequests.length === 0 && uiEvents.length === 0) return;
 
-    var payload = {
-      timestamp: Date.now(),
-      consoleLogs: consoleLogs,
-      networkRequests: networkRequests,
-      // Mirror uiEvents to sessionEvents for sessionReplay.log
-      sessionEvents: uiEvents,
-      uiEvents: uiEvents,
-    };
+    var payload = buildPayload(consoleLogs, networkRequests, uiEvents);
 
     if (navigator.sendBeacon) {
       var payloadStr = JSON.stringify(payload);
-      // sendBeacon has ~64KB limit, truncate if too large
-      var MAX_BEACON_SIZE = 60000; // Leave some margin
+      var MAX_BEACON_SIZE = 60000;
       if (payloadStr.length > MAX_BEACON_SIZE) {
-        // Prioritize: keep recent events, drop older logs
-        var truncatedPayload = {
-          timestamp: Date.now(),
-          consoleLogs: consoleLogs.slice(-50),
-          networkRequests: networkRequests.slice(-20),
-          sessionEvents: uiEvents.slice(-100),
-          uiEvents: uiEvents.slice(-100),
-          _truncated: true,
-        };
-        payloadStr = JSON.stringify(truncatedPayload);
+        payloadStr = JSON.stringify(buildPayload(
+          consoleLogs.slice(-50),
+          networkRequests.slice(-20),
+          uiEvents.slice(-100)
+        ));
+        payload._truncated = true;
       }
       navigator.sendBeacon(CONFIG.reportEndpoint, payloadStr);
     }
@@ -803,16 +561,12 @@
   // Initialization
   // ==========================================================================
 
-  // Install semantic UI listeners ASAP
-  try {
-    installUiEventListeners();
-  } catch (e) {
+  try { installUiEventListeners(); } catch (e) {
     console.warn("[Manus] Failed to install UI listeners:", e);
   }
 
-  // Mark as initialized
   window.__MANUS_DEBUG_COLLECTOR__ = {
-    version: "2.0-no-rrweb",
+    version: "2.1-refactored",
     store: store,
     forceReport: reportLogs,
   };

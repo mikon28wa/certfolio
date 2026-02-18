@@ -399,3 +399,12 @@
 - [x] 17 Showcase-Sektionen in eigenständige Komponenten extrahiert (TextColors 51, ColorCombinations 35, Buttons 28, FormInputs 286, DataDisplay 238, Alerts 26, Tabs 76, Accordion 34, Overlays 178, Menus 74, Calendar 23, Carousel 37, Toggle 46, Layout 40, Resizable 34, Toast 84, AIChatBox 60)
 - [x] ComponentShowcase.tsx als schlanke Shell (71 LOC) mit Section-Imports
 - [x] Alle 158 Tests bestehen ohne Regressionen
+
+### debug-collector.js Refactoring (822 LOC → 575 LOC, -30%)
+- [x] `classifyContentType()` und `skipBodyReason()` extrahiert – eliminiert duplizierte isBinary/isStreaming-Prüfungen in Fetch und XHR
+- [x] `buildPayload()` extrahiert – konsolidiert duplizierte Payload-Erstellung (reportLogs + beforeunload)
+- [x] `captureTextBody()` extrahiert – gemeinsame Body-Truncation-Logik
+- [x] `logNetworkError()` extrahiert – dedupliziert network_error UI-Events
+- [x] `logConsoleError()` extrahiert – dedupliziert error/unhandledrejection Logging
+- [x] `on()` Helper in installUiEventListeners – reduziert addEventListener-Boilerplate
+- [x] Alle 158 Tests bestehen, TypeScript 0 Fehler, Dev-Server läuft fehlerfrei
