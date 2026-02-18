@@ -169,3 +169,6 @@
 - [x] Tests: PDF-Generierung testen
 - [x] Tests: Verschiedene Export-Varianten testen
 - [x] Alle 5 PDF-Tests bestanden
+
+## Bugfixes
+- [x] Profil-Seite: 404-Fehler bei /profile beheben
