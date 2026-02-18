@@ -393,3 +393,9 @@
 - [x] `EditCertificateDialog.tsx` auf 160 LOC reduziert (Dialog-Shell + Tab-Routing)
 - [x] Shared Types/Interfaces in `edit-certificate/types.ts` ausgelagert (84 LOC)
 - [x] 31 Tests für refaktorierte Module geschrieben und bestanden (158 Tests gesamt)
+
+
+### ComponentShowcase Refactoring (1438 LOC → 18 Module)
+- [x] 17 Showcase-Sektionen in eigenständige Komponenten extrahiert (TextColors 51, ColorCombinations 35, Buttons 28, FormInputs 286, DataDisplay 238, Alerts 26, Tabs 76, Accordion 34, Overlays 178, Menus 74, Calendar 23, Carousel 37, Toggle 46, Layout 40, Resizable 34, Toast 84, AIChatBox 60)
+- [x] ComponentShowcase.tsx als schlanke Shell (71 LOC) mit Section-Imports
+- [x] Alle 158 Tests bestehen ohne Regressionen
