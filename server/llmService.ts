@@ -1,5 +1,5 @@
 import { invokeLLM } from "./_core/llm";
-import { getCurrentPrompt, CERTIFICATE_METADATA_EXTRACTION, EXTENDED_CERTIFICATE_ANALYSIS, PROJECT_SKILL_EXTRACTION } from "./llmPrompts";
+import { getCurrentPrompt, CERTIFICATE_METADATA_EXTRACTION_V3, EXTENDED_CERTIFICATE_ANALYSIS_V3, PROJECT_SKILL_EXTRACTION_V3 } from "./llmPrompts";
 
 export interface CertificateMetadata {
   title: string;
@@ -46,7 +46,7 @@ export async function analyzeCertificatePDF(
       messages: [
         {
           role: "system",
-          content: getCurrentPrompt(CERTIFICATE_METADATA_EXTRACTION),
+          content: getCurrentPrompt(CERTIFICATE_METADATA_EXTRACTION_V3),
         },
         {
           role: "user",
@@ -142,7 +142,7 @@ export async function analyzeProject(
       messages: [
         {
           role: "system",
-          content: getCurrentPrompt(PROJECT_SKILL_EXTRACTION),
+          content: getCurrentPrompt(PROJECT_SKILL_EXTRACTION_V3),
         },
         {
           role: "user",
@@ -212,7 +212,7 @@ export async function analyzeCertificateWithSkills(
       messages: [
         {
           role: "system",
-          content: getCurrentPrompt(EXTENDED_CERTIFICATE_ANALYSIS),
+          content: getCurrentPrompt(EXTENDED_CERTIFICATE_ANALYSIS_V3),
         },
         {
           role: "user",

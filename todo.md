@@ -324,3 +324,14 @@
 - [x] Prompt-Versionierung mit Datum und Versionsnummer (PromptConfig-Interface)
 - [x] Historische Prompt-Versionen abrufbar machen (getAllVersions, getPromptVersion)
 - [x] Alle Inline-Prompts durch getCurrentPrompt ersetzt
+
+
+### V3-Prompt-Hardening
+- [x] Alle Prompts nach V3-Struktur umgebaut (SYSTEMROLLE, SCOPE, ARBEITSKONTEXT, ANTI-HALLUZINATION, WORKFLOW, COT, SICHERHEIT, FEHLERHANDLING, OUTPUT)
+- [x] CERTIFICATE_METADATA_EXTRACTION nach V3 (Version 2.0.0)
+- [x] EXTENDED_CERTIFICATE_ANALYSIS nach V3 (Version 2.0.0)
+- [x] PROJECT_SKILL_EXTRACTION nach V3 (Version 2.0.0)
+- [x] V3-Sicherheitsregeln implementiert (Prompt-Injection-Schutz, Rollenmanipulation, Data Leakage, Kontext-Verwechslung)
+- [x] llmPrompts.ts durch V3-Prompts ersetzt
+- [x] llmService.ts auf V3-Imports aktualisiert
+- [x] Server erfolgreich neugestartet
