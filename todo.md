@@ -367,3 +367,19 @@
 - [x] Divider zwischen beiden Optionen
 - [ ] UX: Klarer Hinweistext ("Datei ODER Link")
 - [ ] UX: Hinweisbox bei beiden gesetzten Werten
+
+
+### Router-Refactoring (Maintainability Index Verbesserung)
+- [x] server/routers.ts analysieren und Aufteilungsplan erstellen
+- [x] server/routers/auth.ts erstellen (auth.me, auth.logout, exportData, deleteAccount)
+- [x] server/routers/certificates.ts erstellen (CRUD, search, analyze, upload)
+- [x] server/routers/skills.ts erstellen (getUserSkills, getSkillDetails, recalculate, timeline, recommendations)
+- [x] server/routers/collections.ts erstellen (CRUD, getCertificates, addCertificate, removeCertificate, getSkills)
+- [x] server/routers/projects.ts erstellen (CRUD, analyze, addMedia, deleteMedia, uploadFile)
+- [x] server/routers/pdf.ts erstellen (exportPortfolio)
+- [x] server/routers/index.ts als Haupt-Router erstellen (+ profile.ts, courseLibrary.ts, skillMappings.ts)
+- [x] Alle Imports in abhängigen Dateien aktualisieren
+- [x] Tests ausführen und sicherstellen, dass alle 127 Tests bestehen
+- [ ] Maintainability Index erneut messen (Ziel: >50)
+- [x] Haupt-Router von 827 LOC auf 28 LOC reduziert
+- [x] 9 Module: auth (57), profile (50), certificates (272), skills (50), collections (219), projects (172), pdf (38), courseLibrary (49), skillMappings (59)

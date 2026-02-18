@@ -1,0 +1,9 @@
+export { authRouter } from "./auth";
+export { profileRouter } from "./profile";
+export { certificatesRouter } from "./certificates";
+export { skillsRouter } from "./skills";
+export { collectionsRouter } from "./collections";
+export { projectsRouter } from "./projects";
+export { pdfRouter } from "./pdf";
+export { courseLibraryRouter } from "./courseLibrary";
+export { skillMappingsRouter } from "./skillMappings";

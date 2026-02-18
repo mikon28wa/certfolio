@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE course_library ADD COLUMN customCategory varchar(100) DEFAULT NULL AFTER category;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user RQLuagfstphZ8U2.0c7eed8a7cc1 --database 8SNDfaXn3dqFztPfLJ3ZfF --execute ALTER TABLE course_library ADD COLUMN customCategory varchar(100) DEFAULT NULL AFTER category;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 432
+}
