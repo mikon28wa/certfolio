@@ -8,6 +8,7 @@ import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import NewCertificate from "./pages/NewCertificate";
 import Certificates from "./pages/Certificates";
+import Skills from "./pages/Skills";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -15,8 +16,9 @@ function Router() {
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/dashboard"} component={Dashboard} />
-      <Route path={"/certificates/new"} component={NewCertificate} />
       <Route path={"/certificates"} component={Certificates} />
+      <Route path={"/certificates/new"} component={NewCertificate} />
+      <Route path={"/skills"} component={Skills} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

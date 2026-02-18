@@ -100,3 +100,42 @@
 - [x] Alternative: Externe Link-Eingabe statt Datei-Upload
 - [x] Vorschau des hochgeladenen Zertifikats
 - [x] Validierung und Fehlerbehandlung
+
+## Skill-Mapping-System (Phase 1)
+- [x] Course Library Tabelle erstellen (UUID, Titel, Aussteller, Metadaten)
+- [x] Skill Mappings Tabelle (Kurs → Skills mit Gewichtung)
+- [x] User Skills Tabelle (aggregierte Skill-Werte pro Nutzer)
+- [x] Erweiterte Zertifikats-Metadaten (Kursdauer, Note, UUID, Lernumfang)
+- [x] Migration für neue Tabellen ausführen
+
+## Skill-Mapping-System (Phase 2)
+- [x] Backend-API für Course Library (CRUD)
+- [x] Skill-Aggregation-Engine (Berechnung User Skills)
+- [x] API-Endpoint für User Skill-Profil
+- [x] API-Endpoint für Skill-Details (welche Zertifikate tragen bei)
+
+## Skill-Mapping-System (Phase 3)
+- [x] LLM-Analyse für Skill-Extraktion aus Kursbeschreibung
+- [x] Automatische Gewichtungs-Vorschläge generieren
+- [x] Skill-Taxonomie definieren (Standard-Skills)
+
+## Skill-Mapping-System (Phase 4)
+- [x] Skill-Dashboard mit progressiven Balken
+- [x] Drill-Down-Ansicht (Zertifikate pro Skill)
+- [x] Visualisierung der Skill-Entwicklung über Zeit
+
+## Skill-Mapping-System (Phase 5)
+- [ ] Course Library Management-UI
+- [ ] UUID-Eingabe beim Upload
+- [ ] Automatisches Matching mit Master-DB
+
+## Skill-Mapping-System (Phase 6)
+- [ ] UUID-Erkennung aus PDF/Link
+- [ ] Automatisches Skill-Mapping beim Upload
+- [ ] Crowd-Sourcing: Neue Kurse zur Library hinzufügen
+
+## Skill-Mapping-System (Tests)
+- [x] Tests für Skill-Aggregation-Engine
+- [x] Tests für Skill Mappings (Bulk-Erstellung)
+- [x] Tests für Course Library (CRUD)
+- [x] Datenbank-Cleanup zwischen Tests

@@ -160,6 +160,33 @@ export default function Dashboard() {
           </Card>
         </div>
 
+        {/* Skill Profile Card */}
+        <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5 backdrop-blur-sm mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5 text-primary" />
+              Dein Skill-Profil
+            </CardTitle>
+            <CardDescription>
+              Automatisch aggregierte Skills aus deinen Zertifikaten
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Entdecke, welche Fähigkeiten du durch deine Zertifikate nachweisen kannst. 
+              Das System analysiert automatisch deine Zertifikate und erstellt ein detailliertes Skill-Profil.
+            </p>
+            <Button asChild>
+              <Link href="/skills">
+                Skill-Profil ansehen
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-6 md:grid-cols-1">
+        </div>
+
         {/* Recent Certificates */}
         {certificates && certificates.length > 0 && (
           <Card className="border-2 border-border/50 bg-card/50 backdrop-blur-sm">

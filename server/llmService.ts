@@ -7,6 +7,25 @@ export interface CertificateMetadata {
   description: string;
 }
 
+export interface SkillMapping {
+  skillName: string;
+  skillCategory: string;
+  weight: number;
+  reasoning: string;
+}
+
+export interface ExtendedCertificateAnalysis {
+  title: string;
+  issuer: string;
+  issueDate: string | null;
+  description: string;
+  courseDuration: number | null;
+  courseCredits: number | null;
+  level: "beginner" | "intermediate" | "advanced" | "expert" | null;
+  category: "it" | "marketing" | "management" | "healthcare" | "other" | null;
+  skills: SkillMapping[];
+}
+
 /**
  * Analyzes a certificate PDF using LLM to extract metadata
  * @param fileUrl - Public URL to the certificate file
@@ -91,5 +110,134 @@ Antworte ausschließlich mit einem JSON-Objekt im folgenden Format, ohne zusätz
   } catch (error) {
     console.error("[LLM Service] Fehler bei der PDF-Analyse:", error);
     throw new Error("Fehler bei der automatischen Analyse des Zertifikats");
+  }
+}
+
+/**
+ * Analyzes a certificate with extended skill extraction
+ * @param fileUrl - Public URL to the certificate file
+ * @param mimeType - MIME type of the file
+ * @returns Extended analysis including skill mappings
+ */
+export async function analyzeCertificateWithSkills(
+  fileUrl: string,
+  mimeType: string
+): Promise<ExtendedCertificateAnalysis> {
+  try {
+    const response = await invokeLLM({
+      messages: [
+        {
+          role: "system",
+          content: `Du bist ein Experte für die Analyse von Zertifikaten und die Extraktion von Skill-Informationen.
+
+Extrahiere folgende Informationen aus dem bereitgestellten Zertifikat:
+
+1. **Basis-Metadaten:**
+   - Titel des Zertifikats
+   - Aussteller/Institution
+   - Ausstellungsdatum (YYYY-MM-DD oder null)
+   - Beschreibung (1-2 Sätze)
+
+2. **Kurs-Metadaten:**
+   - Kursdauer in Stunden (falls erkennbar, sonst null)
+   - Credits/ECTS (falls erkennbar, sonst null)
+   - Level: beginner, intermediate, advanced, expert (basierend auf Inhalt/Voraussetzungen)
+   - Kategorie: it, marketing, management, healthcare, other
+
+3. **Skill-Mapping:**
+   Analysiere den Kursinhalt und zerlege ihn in 3-7 konkrete Skills mit Gewichtung.
+   - skillName: Präziser Skill-Name (z.B. "Python Programming", "Data Analysis", "Project Management")
+   - skillCategory: "Technical", "Soft Skills", "Domain Knowledge", "Tools"
+   - weight: Gewichtung 0-100 (Summe aller Weights sollte ~100 ergeben)
+   - reasoning: Kurze Begründung warum dieser Skill mit dieser Gewichtung
+
+Beispiel für Skill-Mapping:
+- "AWS Solutions Architect" → 40% Cloud Architecture, 30% AWS Services, 20% Security, 10% Cost Optimization
+- "Google Analytics" → 50% Web Analytics, 30% Data Interpretation, 20% Reporting
+
+Antworte ausschließlich mit einem JSON-Objekt.`,
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "file_url",
+              file_url: {
+                url: fileUrl,
+                mime_type: mimeType as "application/pdf" | "audio/mpeg" | "audio/wav" | "audio/mp4" | "video/mp4",
+              },
+            },
+            {
+              type: "text",
+              text: "Analysiere dieses Zertifikat vollständig mit Skill-Extraktion.",
+            },
+          ],
+        },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "extended_certificate_analysis",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              issuer: { type: "string" },
+              issueDate: { type: ["string", "null"] },
+              description: { type: "string" },
+              courseDuration: { type: ["number", "null"] },
+              courseCredits: { type: ["number", "null"] },
+              level: {
+                type: ["string", "null"],
+                enum: ["beginner", "intermediate", "advanced", "expert", null],
+              },
+              category: {
+                type: ["string", "null"],
+                enum: ["it", "marketing", "management", "healthcare", "other", null],
+              },
+              skills: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    skillName: { type: "string" },
+                    skillCategory: { type: "string" },
+                    weight: { type: "number" },
+                    reasoning: { type: "string" },
+                  },
+                  required: ["skillName", "skillCategory", "weight", "reasoning"],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: [
+              "title",
+              "issuer",
+              "issueDate",
+              "description",
+              "courseDuration",
+              "courseCredits",
+              "level",
+              "category",
+              "skills",
+            ],
+            additionalProperties: false,
+          },
+        },
+      },
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("Keine Antwort vom LLM erhalten");
+    }
+
+    const contentStr = typeof content === 'string' ? content : JSON.stringify(content);
+    const analysis = JSON.parse(contentStr) as ExtendedCertificateAnalysis;
+    return analysis;
+  } catch (error) {
+    console.error("[LLM Service] Fehler bei der erweiterten Analyse:", error);
+    throw new Error("Fehler bei der automatischen Skill-Analyse des Zertifikats");
   }
 }

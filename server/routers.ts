@@ -5,7 +5,8 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import * as db from "./db";
-import { analyzeCertificatePDF } from "./llmService";
+import * as skillsDb from "./skillsDb";
+import { analyzeCertificatePDF, analyzeCertificateWithSkills } from "./llmService";
 import { storagePut } from "./storage";
 
 export const appRouter = router({
@@ -204,8 +205,18 @@ export const appRouter = router({
         mimeType: z.string(),
       }))
       .mutation(async ({ input }) => {
-        const metadata = await analyzeCertificatePDF(input.fileUrl, input.mimeType);
-        return metadata;
+        const result = await analyzeCertificatePDF(input.fileUrl, input.mimeType);
+        return result;
+      }),
+    
+    analyzeWithSkills: protectedProcedure
+      .input(z.object({
+        fileUrl: z.string().url(),
+        mimeType: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const result = await analyzeCertificateWithSkills(input.fileUrl, input.mimeType);
+        return result;
       }),
     
     uploadFile: protectedProcedure
@@ -228,6 +239,125 @@ export const appRouter = router({
         const { url } = await storagePut(fileKey, buffer, input.mimeType);
         
         return { url, key: fileKey };
+      }),
+  }),
+
+  skills: router({    getUserSkills: protectedProcedure.query(async ({ ctx }) => {
+      return await skillsDb.getUserSkills(ctx.user.id);
+    }),
+    
+    getSkillDetails: protectedProcedure
+      .input(z.object({
+        skillName: z.string(),
+      }))
+      .query(async ({ ctx, input }) => {
+        return await skillsDb.getSkillDetails(ctx.user.id, input.skillName);
+      }),
+    
+    recalculate: protectedProcedure.mutation(async ({ ctx }) => {
+      const skills = await skillsDb.recalculateUserSkills(ctx.user.id);
+      return { success: true, skillCount: skills.length };
+    }),
+  }),
+
+  courseLibrary: router({
+    getAll: publicProcedure.query(async () => {
+      return await skillsDb.getAllCourses();
+    }),
+    
+    getByUuid: publicProcedure
+      .input(z.object({
+        courseUuid: z.string(),
+      }))
+      .query(async ({ input }) => {
+        return await skillsDb.getCourseByUuid(input.courseUuid);
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        courseUuid: z.string(),
+        title: z.string(),
+        issuer: z.string(),
+        description: z.string().optional(),
+        duration: z.number().optional(),
+        credits: z.number().optional(),
+        level: z.enum(["beginner", "intermediate", "advanced", "expert"]).optional(),
+        category: z.enum(["it", "marketing", "management", "healthcare", "other"]).optional(),
+        providerUrl: z.string().optional(),
+        providerName: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Check if course already exists
+        const existing = await skillsDb.getCourseByUuid(input.courseUuid);
+        if (existing) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Dieser Kurs existiert bereits in der Bibliothek",
+          });
+        }
+        
+        const course = await skillsDb.createCourse({
+          ...input,
+          analyzedBy: ctx.user.id,
+        });
+        
+        return course;
+      }),
+  }),
+
+  skillMappings: router({
+    getByCertificateId: protectedProcedure
+      .input(z.object({
+        certificateId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return await skillsDb.getSkillMappingsByCertificateId(input.certificateId);
+      }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        certificateId: z.number(),
+        skillName: z.string(),
+        skillCategory: z.string().optional(),
+        weight: z.number().min(0).max(100),
+        source: z.enum(["llm", "manual", "library"]).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const mapping = await skillsDb.createSkillMapping(input);
+        return mapping;
+      }),
+    
+    createBulk: protectedProcedure
+      .input(z.object({
+        certificateId: z.number(),
+        mappings: z.array(z.object({
+          skillName: z.string(),
+          skillCategory: z.string().optional(),
+          weight: z.number().min(0).max(100),
+          source: z.enum(["llm", "manual", "library"]).optional(),
+        })),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Verify certificate belongs to user
+        const cert = await db.getCertificateById(input.certificateId);
+        if (!cert || cert.userId !== ctx.user.id) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Zertifikat nicht gefunden",
+          });
+        }
+        
+        const mappingsWithCertId = input.mappings.map(m => ({
+          ...m,
+          certificateId: input.certificateId,
+        }));
+        
+        await skillsDb.createSkillMappings(mappingsWithCertId);
+        
+        // Recalculate user skills
+        await skillsDb.recalculateUserSkills(ctx.user.id);
+        
+        return { success: true, count: mappingsWithCertId.length };
       }),
   }),
 
