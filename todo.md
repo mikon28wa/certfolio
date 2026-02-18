@@ -173,3 +173,4 @@
 ## Bugfixes
 - [x] Profil-Seite: 404-Fehler bei /profile beheben
 - [x] Startseite: Komplett neu erstellen mit Anmelden/Registrieren-Button, CertFolio Produktname und Blue-Banana-Labs Branding
+- [x] Startseite: Textkorrektur bei "Collections erstellen" Feature-Card
