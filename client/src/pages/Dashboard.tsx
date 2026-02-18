@@ -2,11 +2,14 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Award, FolderOpen, Plus, Settings, Share2 } from "lucide-react";
+import { Award, FolderOpen, Plus, Settings, Share2, FileDown } from "lucide-react";
 import { Link } from "wouter";
+import { ExportDialog } from "@/components/ExportDialog";
+import { useState } from "react";
 
 export default function Dashboard() {
   const { user, loading } = useAuth();
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const { data: certificates, isLoading: certsLoading } = trpc.certificates.list.useQuery(undefined, {
     enabled: !!user,
   });
@@ -40,6 +43,10 @@ export default function Dashboard() {
               <p className="text-muted-foreground">Dein professionelles Zertifikatsportfolio</p>
             </div>
             <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setExportDialogOpen(true)}>
+                <FileDown className="mr-2 h-4 w-4" />
+                PDF Export
+              </Button>
               <Button variant="outline" asChild>
                 <Link href="/profile">
                   <Settings className="mr-2 h-4 w-4" />
@@ -243,6 +250,13 @@ export default function Dashboard() {
           </Card>
         )}
       </div>
+
+      {/* Export Dialog */}
+      <ExportDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        collections={collections || []}
+      />
     </div>
   );
 }

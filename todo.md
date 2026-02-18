@@ -156,3 +156,16 @@
 - [x] Test: Skills aus mehreren Zertifikaten aggregieren
 - [x] Test: Zertifikat ohne Skill-Mappings behandeln
 - [x] Alle 5 Tests bestanden
+
+## PDF-Export-Funktion
+- [x] Backend: PDF-Generierung mit WeasyPrint
+- [x] Backend: Vollständiges Portfolio-PDF (alle Zertifikate + Skills)
+- [x] Backend: Collection-basierter Export
+- [x] Backend: Skill-Profil-Visualisierung in PDF
+- [x] Backend: Branding-Optionen (Logo, Farben, Kontaktinfo)
+- [x] Frontend: Export-Dialog mit Optionen
+- [x] Frontend: Branding-Einstellungen-UI
+- [x] Frontend: Download-Button für PDF
+- [x] Tests: PDF-Generierung testen
+- [x] Tests: Verschiedene Export-Varianten testen
+- [x] Alle 5 PDF-Tests bestanden
