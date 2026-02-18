@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Check, Copy, ExternalLink, Loader2, Save, User } from "lucide-react";
+import { ArrowLeft, Check, Copy, ExternalLink, Loader2, Save, User, Download, Trash2, AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { toast } from "sonner";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Profile() {
   const { user, loading } = useAuth();
@@ -19,6 +21,8 @@ export default function Profile() {
   const [bio, setBio] = useState("");
   const [profileSlug, setProfileSlug] = useState("");
   const [copied, setCopied] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
   const updateProfile = trpc.profile.update.useMutation({
     onSuccess: () => {
@@ -59,6 +63,40 @@ export default function Profile() {
       toast.success("Link in Zwischenablage kopiert!");
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const handleExportData = async () => {
+    try {
+      const data = await utils.client.auth.exportData.query();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `certfolio-export-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Daten erfolgreich exportiert!");
+    } catch (error: any) {
+      toast.error(error.message || "Fehler beim Exportieren");
+    }
+  };
+
+  const deleteMutation = trpc.auth.deleteAccount.useMutation({
+    onSuccess: () => {
+      toast.success("Account erfolgreich gelöscht");
+      window.location.href = "/";
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const handleDeleteAccount = () => {
+    if (deleteConfirmation !== "DELETE") {
+      toast.error('Bitte gib "DELETE" ein, um fortzufahren');
+      return;
+    }
+    deleteMutation.mutate({ confirmation: "DELETE" });
   };
 
   if (loading) {
@@ -224,6 +262,42 @@ export default function Profile() {
             </CardContent>
           </Card>
 
+          {/* Data Management */}
+          <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Download className="h-5 w-5" />
+                Datenverwaltung
+              </CardTitle>
+              <CardDescription>
+                Exportiere oder lösche deine Daten gemäß DSGVO
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-background/30">
+                <div>
+                  <h4 className="font-semibold">Datenexport</h4>
+                  <p className="text-sm text-muted-foreground">Lade alle deine Daten als JSON-Datei herunter</p>
+                </div>
+                <Button variant="outline" onClick={handleExportData}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Exportieren
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between p-4 rounded-lg border border-destructive/50 bg-destructive/5">
+                <div>
+                  <h4 className="font-semibold text-destructive">Account löschen</h4>
+                  <p className="text-sm text-muted-foreground">Alle Daten werden unwiderruflich gelöscht</p>
+                </div>
+                <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Löschen
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Save Button */}
           <div className="flex justify-end gap-3">
             <Button variant="outline" asChild>
@@ -247,6 +321,61 @@ export default function Profile() {
             </Button>
           </div>
         </div>
+
+        {/* Delete Account Dialog */}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                Account löschen
+              </DialogTitle>
+              <DialogDescription>
+                Diese Aktion kann nicht rückgängig gemacht werden. Alle deine Zertifikate, Projekte, 
+                Collections und Skills werden unwiderruflich gelöscht.
+              </DialogDescription>
+            </DialogHeader>
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Gib <strong>DELETE</strong> ein, um zu bestätigen.
+              </AlertDescription>
+            </Alert>
+            <Input
+              placeholder="DELETE"
+              value={deleteConfirmation}
+              onChange={(e) => setDeleteConfirmation(e.target.value)}
+            />
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteDialog(false);
+                  setDeleteConfirmation("");
+                }}
+              >
+                Abbrechen
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmation !== "DELETE" || deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Lösche...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Endgültig löschen
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

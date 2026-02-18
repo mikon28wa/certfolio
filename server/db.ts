@@ -10,7 +10,11 @@ import {
   InsertCollection,
   Collection,
   collectionCertificates,
-  InsertCollectionCertificate
+  InsertCollectionCertificate,
+  projectEvents,
+  skillMappings,
+  userSkills,
+  skillHistory
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -361,4 +365,39 @@ export async function getCertificatesByCollectionId(collectionId: number): Promi
   // Sort by original order
   const certMap = new Map(certs.map(c => [c.id, c]));
   return certIds.map(id => certMap.get(id)).filter((c): c is Certificate => c !== undefined);
+}
+
+export async function getProjectsByUserId(userId: number) {
+  const database = await getDb();
+  if (!database) return [];
+  return database.select().from(projectEvents).where(eq(projectEvents.userId, userId));
+}
+
+export async function deleteUserData(userId: number): Promise<void> {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  
+  // Delete in correct order to respect foreign key constraints
+  await database.delete(skillMappings).where(
+    inArray(
+      skillMappings.certificateId,
+      database.select({ id: certificates.id }).from(certificates).where(eq(certificates.userId, userId))
+    )
+  );
+  
+  await database.delete(collectionCertificates).where(
+    inArray(
+      collectionCertificates.collectionId,
+      database.select({ id: collections.id }).from(collections).where(eq(collections.userId, userId))
+    )
+  );
+  
+  await database.delete(skillHistory).where(eq(skillHistory.userId, userId));
+  await database.delete(userSkills).where(eq(userSkills.userId, userId));
+  await database.delete(certificates).where(eq(certificates.userId, userId));
+  await database.delete(projectEvents).where(eq(projectEvents.userId, userId));
+  await database.delete(collections).where(eq(collections.userId, userId));
+  
+  // Finally delete the user
+  await database.delete(users).where(eq(users.id, userId));
 }

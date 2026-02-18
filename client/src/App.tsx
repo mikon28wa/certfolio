@@ -1,7 +1,8 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
-import { lazy, Suspense } from "react";
+import { Suspense, lazy } from "react";
+import { CookieBanner } from "@/components/CookieBanner";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
@@ -12,6 +13,10 @@ const NewCertificate = lazy(() => import("./pages/NewCertificate"));
 const Certificates = lazy(() => import("./pages/Certificates"));
 const Skills = lazy(() => import("./pages/Skills"));
 const Profile = lazy(() => import("./pages/Profile"));
+const Collections = lazy(() => import("./pages/Collections"));
+const CollectionDetail = lazy(() => import("./pages/CollectionDetail"));
+const Impressum = lazy(() => import("./pages/Impressum"));
+const Datenschutz = lazy(() => import("./pages/Datenschutz"));
 const NewProject = lazy(() => import("./pages/NewProject"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -31,6 +36,7 @@ function PageLoader() {
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
+    <>
     <Suspense fallback={<PageLoader />}>
       <Switch>
         <Route path={"/"} component={Home} />
@@ -38,7 +44,11 @@ function Router() {
         <Route path={"/certificates"} component={Certificates} />
         <Route path={"/certificates/new"} component={NewCertificate} />
         <Route path={"/skills"} component={Skills} />
-        <Route path={"/profile"} component={Profile} />
+          <Route path="/profile" component={Profile} />
+          <Route path="/collections" component={Collections} />
+          <Route path="/collections/:id" component={CollectionDetail} />
+          <Route path="/impressum" component={Impressum} />
+          <Route path="/datenschutz" component={Datenschutz} />
         <Route path={"/projects/new"} component={NewProject} />
 
         <Route path={"/404"} component={NotFound} />
@@ -46,6 +56,8 @@ function Router() {
         <Route component={NotFound} />
       </Switch>
     </Suspense>
+    <CookieBanner />
+    </>
   );
 }
 

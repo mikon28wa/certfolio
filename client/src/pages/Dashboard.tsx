@@ -122,7 +122,7 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid gap-6 md:grid-cols-2 mb-8">
+        <div className="grid gap-6 md:grid-cols-3 mb-8">
           <Card className="border-2 border-border/50 bg-card/50 backdrop-blur-sm">
             <CardHeader>
               <CardTitle>Zertifikate verwalten</CardTitle>
@@ -140,6 +140,23 @@ export default function Dashboard() {
               <Button variant="outline" asChild>
                 <Link href="/certificates">
                   Alle anzeigen
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 border-border/50 bg-card/50 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle>Collections verwalten</CardTitle>
+              <CardDescription>
+                Gruppiere Zertifikate thematisch für Bewerbungen
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex gap-3">
+              <Button asChild>
+                <Link href="/collections">
+                  <FolderOpen className="mr-2 h-4 w-4" />
+                  Collections ansehen
                 </Link>
               </Button>
             </CardContent>

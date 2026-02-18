@@ -261,3 +261,34 @@
 - [x] Vitest-Konfiguration für Frontend-Tests (jsdom)
 - [ ] E2E-Tests (kritische Flows)
 - [ ] Error-Tracking und Monitoring
+
+---
+
+## NEUE FEATURES (In Arbeit)
+
+### 20. Collections-Management-UI
+- [x] Collections-Listenansicht (`/collections`)
+- [x] Collection erstellen (Dialog)
+- [x] Collection bearbeiten (Dialog)
+- [x] Collection löschen (mit Bestätigung)
+- [x] Zertifikate zu Collection zuweisen (Dropdown/Select)
+- [x] Zertifikate aus Collection entfernen
+- [x] Route in App.tsx registrieren
+- [x] Collection-Detail-Seite (`/collections/:id`)
+- [x] Collections-Link im Dashboard
+
+### 21. DSGVO-Minimum
+- [x] Impressum-Seite (`/impressum`)
+- [x] Datenschutzerklärung-Seite (`/datenschutz`)
+- [x] Cookie-Banner (einfacher Hinweis mit "Verstanden"-Button)
+- [x] Account-Löschung (Button im Profil mit Bestätigung)
+- [x] Datenexport (Button im Profil, JSON-Download)
+- [x] Backend: exportData und deleteAccount-Endpunkte
+- [x] Frontend: Datenverwaltung-Sektion im Profil
+
+### 22. Stripe-Integration (Pro-Plan)
+- [ ] Subscription-Tabelle in Datenbank
+- [ ] Backend-Endpunkte (createCheckoutSession, handleWebhook, getSubscription)
+- [ ] Upgrade-Button im Dashboard
+- [ ] Checkout-Flow mit Stripe MCP
+- [ ] Usage Limits (Free: 10 Zertifikate, Pro: unbegrenzt)
