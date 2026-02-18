@@ -1,210 +1,250 @@
 # CertFolio - Projekt TODO
 
-## Authentifizierung & Benutzerverwaltung
-- [ ] Manus OAuth Integration (bereits vorkonfiguriert)
-- [ ] Benutzerregistrierung und Login-Flow
-- [ ] Benutzerprofil-Verwaltung
+---
 
-## Datenbankschema
-- [x] Zertifikats-Tabelle mit Metadaten erstellen
-- [x] Beziehungen zwischen User und Zertifikaten definieren
-- [x] Migration ausführen
+## 1. Authentifizierung & Benutzerverwaltung
+- [x] Manus OAuth Integration (Login/Logout über OAuth-Callback)
+- [x] Benutzerregistrierung via OAuth (automatisch bei erstem Login)
+- [x] Session-Management mit JWT-Cookie
+- [x] Profil-Verwaltung (Name, Bio, Profilslug)
+- [x] Öffentliche Profil-URL konfigurierbar (`/p/[slug]` vorbereitet, Slug speicherbar)
 
-## Backend-API (tRPC Procedures)
-- [x] Zertifikat hochladen und speichern
-- [x] Zertifikat-Liste abrufen (eigene)
-- [x] Einzelnes Zertifikat abrufen
-- [x] Zertifikat aktualisieren
-- [x] Zertifikat löschen
-- [x] Öffentliches Profil abrufen (nach Username/ID)
-- [x] Zertifikate filtern und suchen
+## 2. Datenbankschema
+- [x] Users-Tabelle (id, openId, name, email, role, bio, profileSlug)
+- [x] Certificates-Tabelle (Metadaten, Datei-Referenzen, Kurs-Metadaten)
+- [x] Collections-Tabelle (Name, Beschreibung, Slug, Sichtbarkeit)
+- [x] Collection-Certificates-Verknüpfung (Many-to-Many mit Sortierung)
+- [x] Course Library-Tabelle (UUID-basierte Master-Datenbank)
+- [x] Skill Mappings-Tabelle (Kurs/Zertifikat → Skills mit Gewichtung)
+- [x] User Skills-Tabelle (aggregierte Skill-Werte mit Decay-Score und Level)
+- [x] Project Events-Tabelle (Rolle, Technologien, Komplexität, Impact)
+- [x] Project Skill Links-Tabelle (Projekt → Skills mit Gewichtung)
+- [x] Project Media-Tabelle (Bilder, PDFs, Links pro Projekt)
+- [x] Alle Migrationen ausgeführt
 
-## LLM-Integration
-- [x] PDF-Analyse-Funktion zur Extraktion von Metadaten
-- [x] Automatische Befüllung von Titel, Aussteller, Datum, Beschreibung
+## 3. Backend-API (tRPC Procedures)
 
-## Frontend - Design & Layout
-- [x] Blueprint-Ästhetik mit königsblauem Hintergrund implementieren
-- [x] Rastermuster und technische Linienzeichnungen hinzufügen
-- [x] Typografie mit weißer serifenloser Schrift konfigurieren
-- [x] Dashboard-Layout mit Navigation erstellen
-- [x] Responsive Design für Mobile optimieren
+### 3.1 Zertifikate
+- [x] `certificates.create` – Zertifikat erstellen mit Skill-Mappings und Course-Library-Integration
+- [x] `certificates.list` – Eigene Zertifikate auflisten
+- [x] `certificates.listPublic` – Öffentliche Zertifikate eines Nutzers abrufen
+- [x] `certificates.get` – Einzelnes Zertifikat abrufen (Ownership-Check)
+- [x] `certificates.update` – Zertifikat aktualisieren inkl. Skill-Mappings-Ersetzung
+- [x] `certificates.delete` – Zertifikat löschen
+- [x] `certificates.search` – Volltextsuche (Titel, Aussteller, Beschreibung)
+- [x] `certificates.analyzePDF` – LLM-Analyse für Metadaten-Extraktion
+- [x] `certificates.analyzeWithSkills` – Erweiterte LLM-Analyse mit Skill-Extraktion
+- [x] `certificates.uploadFile` – Datei-Upload zu S3
 
-## Frontend - Zertifikatsverwaltung
-- [x] Dashboard-Übersicht mit Zertifikatskarten
-- [x] Upload-Komponente mit Drag & Drop
-- [x] Formular zur Metadaten-Erfassung
-- [x] Bearbeitungs-Dialog für Zertifikate
-- [x] Lösch-Funktion mit Bestätigung
+### 3.2 Skills
+- [x] `skills.getUserSkills` – Aggregierte Skills mit Decay-Score und Level abrufen
+- [x] `skills.getSkillDetails` – Skill-Details mit beitragenden Zertifikaten/Projekten
+- [x] `skills.recalculate` – Skill-Neuberechnung auslösen
 
-## Öffentliches Profil
-- [ ] Öffentliche Profilseite mit teilbarem Link
-- [ ] Anzeige aller Zertifikate eines Benutzers
-- [ ] Profil-Customization (Name, Bio, Avatar)
+### 3.3 Course Library
+- [x] `courseLibrary.getAll` – Alle Kurse abrufen
+- [x] `courseLibrary.getByUuid` – Kurs per UUID suchen
+- [x] `courseLibrary.create` – Neuen Kurs anlegen
+- [x] Automatische UUID-Prüfung und Usage-Count-Erhöhung beim Zertifikats-Upload
 
-## Export-Funktionen
-- [ ] Einzelnes Zertifikat als PDF exportieren
-- [ ] Gesamtes Portfolio als PDF exportieren
-- [ ] Download-Buttons in UI integrieren
+### 3.4 Skill Mappings
+- [x] `skillMappings.getByCertificateId` – Mappings pro Zertifikat abrufen
+- [x] `skillMappings.create` – Einzelnes Mapping erstellen
+- [x] `skillMappings.createBulk` – Mehrere Mappings erstellen mit Skill-Neuberechnung
 
-## Such- und Filterfunktionen
-- [ ] Suchleiste zur Volltextsuche
-- [ ] Filter nach Aussteller
-- [ ] Filter nach Datum
-- [ ] Filter nach Kategorie/Tags
+### 3.5 Collections
+- [x] `collections.create` – Collection erstellen (mit Slug-Duplikat-Check)
+- [x] `collections.list` – Eigene Collections auflisten
+- [x] `collections.listPublic` – Öffentliche Collections eines Nutzers
+- [x] `collections.get` – Einzelne Collection abrufen
+- [x] `collections.getBySlug` – Collection per Slug abrufen (public)
+- [x] `collections.update` – Collection aktualisieren
+- [x] `collections.delete` – Collection löschen
+- [x] `collections.getCertificates` – Zertifikate einer Collection abrufen
+- [x] `collections.addCertificate` – Zertifikat zu Collection hinzufügen
+- [x] `collections.removeCertificate` – Zertifikat aus Collection entfernen
+- [x] `collections.getSkills` – Collection-spezifische Skill-Levels berechnen
 
-## Social Media Integration
-- [ ] Share-Buttons für LinkedIn
-- [ ] Share-Buttons für Twitter
-- [ ] Share-Buttons für Facebook
-- [ ] Kopieren-Button für Profil-Link
+### 3.6 Projekt-Events
+- [x] `projects.list` – Eigene Projekte auflisten
+- [x] `projects.get` – Einzelnes Projekt mit Skill-Links und Medien abrufen
+- [x] `projects.create` – Projekt erstellen mit Skill-Links und Neuberechnung
+- [x] `projects.update` – Projekt aktualisieren mit Skill-Neuberechnung
+- [x] `projects.delete` – Projekt löschen mit Skill-Neuberechnung
+- [x] `projects.analyze` – KI-Analyse für Projekte (Skill-Extraktion)
+- [x] `projects.addMedia` – Medien zu Projekt hinzufügen
+- [x] `projects.deleteMedia` – Medien von Projekt entfernen
+- [x] `projects.uploadFile` – Projekt-Datei zu S3 hochladen
 
-## Testing & Deployment
-- [ ] Vitest-Tests für Backend-Procedures
-- [ ] Manuelle UI-Tests durchführen
-- [ ] Checkpoint erstellen
+### 3.7 PDF-Export
+- [x] `pdf.exportPortfolio` – Portfolio-PDF generieren (mit Collection-Filter, Branding, S3-Upload)
 
-## Erweiterte Metadaten & Funktionen
-- [x] Skills-Feld zu Zertifikaten hinzufügen
-- [x] Level-Feld (Beginner/Intermediate/Advanced/Expert)
-- [x] Verifizierungs-Status und Original-URL
-- [x] Kategorien-System (IT, Marketing, Pflege, Management)
-- [x] Prioritäts-System (wichtig/normal)
-- [x] Link-Upload zusätzlich zu Dateien
+### 3.8 Profil
+- [x] `profile.get` – Eigenes Profil abrufen
+- [x] `profile.update` – Profil aktualisieren (Name, Bio, Slug)
+- [x] `profile.getBySlug` – Öffentliches Profil per Slug abrufen
 
-## Collections/Sets
-- [x] Collections-Tabelle erstellen
-- [x] Viele-zu-Viele-Beziehung zwischen Collections und Zertifikaten
-- [x] Collection erstellen/bearbeiten/löschen
-- [x] Zertifikate zu Collections hinzufügen/entfernen
-- [x] Öffentliche Collection-URLs
-
-## Open Graph & Social Media
-- [ ] Open Graph Metadaten für Portfolio-Seiten
-- [ ] Dynamische OG-Bilder generieren
-- [ ] Share-Preview für LinkedIn/Twitter/Facebook
-
-## PDF-Export erweitert
-- [ ] Export einzelner Collections als PDF
-- [ ] Professionelles PDF-Layout mit Logo/Branding
-
-## Zertifikats-Upload-Formular
-- [x] Datei-Upload-Komponente mit Drag & Drop
-- [x] S3-Upload-Integration
-- [x] Automatische LLM-Analyse nach Upload
-- [x] Formular für manuelle Metadaten-Eingabe
-- [x] Skills-Tags-Eingabe
-- [x] Level-Auswahl (Beginner/Intermediate/Advanced/Expert)
-- [x] Kategorie-Auswahl
-- [x] Verifizierungs-URL-Eingabe
-- [x] Alternative: Externe Link-Eingabe statt Datei-Upload
-- [x] Vorschau des hochgeladenen Zertifikats
-- [x] Validierung und Fehlerbehandlung
-
-## Skill-Mapping-System (Phase 1)
-- [x] Course Library Tabelle erstellen (UUID, Titel, Aussteller, Metadaten)
-- [x] Skill Mappings Tabelle (Kurs → Skills mit Gewichtung)
-- [x] User Skills Tabelle (aggregierte Skill-Werte pro Nutzer)
-- [x] Erweiterte Zertifikats-Metadaten (Kursdauer, Note, UUID, Lernumfang)
-- [x] Migration für neue Tabellen ausführen
-
-## Skill-Mapping-System (Phase 2)
-- [x] Backend-API für Course Library (CRUD)
-- [x] Skill-Aggregation-Engine (Berechnung User Skills)
-- [x] API-Endpoint für User Skill-Profil
-- [x] API-Endpoint für Skill-Details (welche Zertifikate tragen bei)
-
-## Skill-Mapping-System (Phase 3)
-- [x] LLM-Analyse für Skill-Extraktion aus Kursbeschreibung
-- [x] Automatische Gewichtungs-Vorschläge generieren
-- [x] Skill-Taxonomie definieren (Standard-Skills)
-
-## Skill-Mapping-System (Phase 4)
-- [x] Skill-Dashboard mit progressiven Balken
-- [x] Drill-Down-Ansicht (Zertifikate pro Skill)
-- [x] Visualisierung der Skill-Entwicklung über Zeit
-
-## Skill-Mapping-System (Phase 5)
-- [ ] Course Library Management-UI
-- [ ] UUID-Eingabe beim Upload
-- [ ] Automatisches Matching mit Master-DB
-
-## Skill-Mapping-System (Phase 6)
-- [ ] UUID-Erkennung aus PDF/Link
-- [ ] Automatisches Skill-Mapping beim Upload
-- [ ] Crowd-Sourcing: Neue Kurse zur Library hinzufügen
-
-## Skill-Mapping-System (Tests)
-- [x] Tests für Skill-Aggregation-Engine
-- [x] Tests für Skill Mappings (Bulk-Erstellung)
-- [x] Tests für Course Library (CRUD)
-- [x] Datenbank-Cleanup zwischen Tests
-
-## Phase 5: UUID-Matching und automatisches Skill-Mapping (korrigiert)
-- [x] Course Library UI entfernen (nur Backend-System)
-- [x] UUID-Eingabefeld im Upload-Formular hinzufügen
-- [x] Automatische UUID-Prüfung beim Upload
-- [x] Skill-Mappings aus Library übernehmen (falls vorhanden)
-- [x] Automatische LLM-Analyse mit Skill-Extraktion beim Upload
-- [x] Kurs zur Library hinzufügen nach erfolgreicher Analyse
-- [x] Skill-Aggregation nach Upload automatisch auslösen
-
-## Phase 6: Tests für vollständigen Upload-Flow
-- [x] Test: Zertifikat mit Skill-Mappings erstellen und Aggregation auslösen
-- [x] Test: Kurs zur Library hinzufügen mit UUID
-- [x] Test: Usage Count für existierenden Kurs erhöhen
-- [x] Test: Skills aus mehreren Zertifikaten aggregieren
-- [x] Test: Zertifikat ohne Skill-Mappings behandeln
-- [x] Alle 5 Tests bestanden
-
-## PDF-Export-Funktion
-- [x] Backend: PDF-Generierung mit WeasyPrint
-- [x] Backend: Vollständiges Portfolio-PDF (alle Zertifikate + Skills)
-- [x] Backend: Collection-basierter Export
-- [x] Backend: Skill-Profil-Visualisierung in PDF
-- [x] Backend: Branding-Optionen (Logo, Farben, Kontaktinfo)
-- [x] Frontend: Export-Dialog mit Optionen
-- [x] Frontend: Branding-Einstellungen-UI
-- [x] Frontend: Download-Button für PDF
-- [x] Tests: PDF-Generierung testen
-- [x] Tests: Verschiedene Export-Varianten testen
-- [x] Alle 5 PDF-Tests bestanden
-
-## Bugfixes
-- [x] Profil-Seite: 404-Fehler bei /profile beheben
-- [x] Startseite: Komplett neu erstellen mit Anmelden/Registrieren-Button, CertFolio Produktname und Blue-Banana-Labs Branding
-- [x] Startseite: Textkorrektur bei "Collections erstellen" Feature-Card
-
-## Erweiterte Skill-Score-Engine
-- [x] Datenmodell: Projekt-Events-Tabelle (type, date, complexity, responsibility, impact)
-- [x] Datenmodell: Skill-Events-Verknüpfung (Projekte → Skills)
-- [x] Skill-Score-Engine: Decay-Funktionen (λ_cert=0.15, λ_proj=0.07)
-- [x] Skill-Score-Engine: Frequenz-Faktor (Spacing-Effekt)
-- [x] Skill-Score-Engine: Level-Mapping Score → Level 0-5
-- [x] Skill-Score-Engine: Business-Regeln (Zertifikat-only sinkt schnell)
-- [x] Backend-API: Projekt-Events CRUD
-- [x] Backend-API: Neue Skill-Score-Berechnung integrieren
-- [x] Frontend: Skill-Balken mit Level 0-5 und Decay-Visualisierung
-- [x] Frontend: Tooltips mit Score, Nachweistypen, letzter Nutzung
-- [x] Frontend: Projekt-Events hinzufügen/verwalten
-- [x] Tests: Skill-Score-Engine mit Decay und Frequenz-Faktor (23 Tests bestanden)
-- [x] Tests: Business-Regeln (Zertifikat-only Deckel)
-- [x] Tests: Level-Mapping
-
-## Erweiterte Projekt-Events (Work Samples)
-- [x] Datenmodell: Projekt-Medien-Tabelle (Bilder, PDFs, Links)
-- [x] Datenmodell: Erweiterte Felder (Rolle, Technologien, Ergebnis/Impact)
-- [x] Backend-API: Projekt-Events CRUD mit Medien-Upload
-- [x] Backend-API: KI-Analyse für Projekte (Skill-Extraktion)
-- [x] Frontend: Projekt-Upload-Formular mit Medien und KI-Vorschlägen
+## 4. Skill-Score-Engine
+- [x] Exponentieller Decay: Zertifikate λ=0.15, Projekte λ=0.07
+- [x] Frequenz-Faktor (Spacing-Effekt, α=0.15)
+- [x] Level-Mapping Score → Level 0-5 (Schwellen: 0, 1, 3, 6, 10, 15)
+- [x] Business-Regel: Zertifikat-only Skills werden nach 12 Monaten auf Level 2 gedeckelt
+- [x] Projekt-Gewichtung mit Komplexität, Verantwortung und Impact
+- [x] Automatische Neuberechnung bei Zertifikats-/Projekt-Änderungen
 - [x] Collection-spezifische Skill-Level-Berechnung
-- [x] Frontend: Skill-Detailansicht (beitragende Zertifikate + Projekte)
 
-## Bearbeitungs-Dialog für Zertifikate
-- [x] Backend: Skill-Mappings beim Update ersetzen/aktualisieren
-- [x] Frontend: Bearbeitungs-Dialog mit vorausgefülltem Formular
-- [x] Frontend: Skill-Mapping-Editor (hinzufügen, entfernen, Gewichtung ändern)
-- [x] Frontend: Datei-Vorschau für hochgeladene Zertifikate
-- [x] Frontend: Erneute LLM-Analyse-Option
-- [x] Integration in Zertifikatsliste und Dashboard
-- [x] Tests für Update mit Skill-Mappings (49/49 Tests bestanden)
+## 5. LLM-Integration
+- [x] PDF-Analyse zur Metadaten-Extraktion (Titel, Aussteller, Datum, Beschreibung)
+- [x] Erweiterte Analyse mit Skill-Extraktion (3-7 Skills pro Zertifikat, Gewichtung, Kategorie)
+- [x] Projekt-Analyse mit Skill-Extraktion aus Beschreibung und Technologien
+- [x] Course Library: UUID-Matching zur Wiederverwendung von Analysen
+
+## 6. Frontend – Design & Layout
+- [x] Blueprint-Ästhetik mit königsblauem Hintergrund (#1e3a8a)
+- [x] Technisches Rastermuster und CAD-Style Linien
+- [x] Dark Theme als Standard
+- [x] Responsive Design
+- [x] Navigation: Startseite, Dashboard, Zertifikate, Skills, Profil, Projekte
+- [x] CertFolio-Branding mit "by Blue-Banana-Labs"
+
+## 7. Frontend – Seiten (implementiert)
+
+### 7.1 Startseite (`/`)
+- [x] Hero-Bereich mit Produktbeschreibung (deutsch)
+- [x] Feature-Cards (Upload & Analyse, Skill-Mapping, Portfolio teilen)
+- [x] Anmelden/Registrieren-Button (wechselt zu Dashboard/Abmelden bei Login)
+- [x] Blue-Banana-Labs Branding
+
+### 7.2 Dashboard (`/dashboard`)
+- [x] Statistik-Karten (Zertifikate, Collections, Verifiziert)
+- [x] Quick Actions (Neues Zertifikat, Neues Projekt, PDF-Export)
+- [x] Skill-Profil-Übersicht (Top Skills)
+- [x] PDF-Export-Dialog
+
+### 7.3 Zertifikate (`/certificates`)
+- [x] Zertifikatsliste mit Karten-Layout
+- [x] Suchleiste (Volltextsuche über Titel, Aussteller, Beschreibung)
+- [x] Bearbeitungs-Dialog (Metadaten, Skills, Erweitert)
+- [x] Lösch-Funktion mit Bestätigung
+- [x] Kategorie- und Level-Badges
+
+### 7.4 Neues Zertifikat (`/certificates/new`)
+- [x] Drag & Drop Upload (PDF, Bilder)
+- [x] Alternative: Externe Link-Eingabe
+- [x] Automatische LLM-Analyse nach Upload
+- [x] Skill-Extraktion mit Gewichtungs-Editor
+- [x] Formular für manuelle Metadaten-Eingabe
+- [x] UUID-Eingabefeld für Course Library Matching
+
+### 7.5 Skills (`/skills`)
+- [x] Skill-Dashboard mit progressiven Balken (Level 0-5)
+- [x] Level-Labels (Keine Erfahrung bis Meister)
+- [x] Farbcodierung pro Level
+- [x] Skill-Detail-Dialog (beitragende Zertifikate und Projekte)
+- [x] Tooltips mit Score, Nachweistypen, letzter Nutzung
+
+### 7.6 Profil (`/profile`)
+- [x] Persönliche Informationen bearbeiten (Name, Bio)
+- [x] Profilslug konfigurieren
+- [x] Öffentliche URL anzeigen und kopieren
+
+### 7.7 Neues Projekt (`/projects/new`)
+- [x] Projekt-Upload-Formular mit Medien-Upload
+- [x] KI-Analyse für Skill-Vorschläge
+- [x] Rolle, Technologien, Komplexität, Impact-Felder
+
+## 8. Frontend – Komponenten
+- [x] EditCertificateDialog (Tabs: Metadaten, Skills, Erweitert)
+- [x] ExportDialog (PDF-Export mit Branding-Optionen)
+- [x] ErrorBoundary
+
+## 9. PDF-Export
+- [x] Blueprint-Design im PDF
+- [x] Skill-Visualisierung mit progressiven Balken
+- [x] Collection-basierter Export
+- [x] Branding-Optionen (Logo, Farben, Kontaktinfo, LinkedIn)
+- [x] Automatischer S3-Upload des generierten PDFs
+
+## 10. Tests (49 bestanden)
+- [x] Auth-Tests (1 Test: Logout)
+- [x] Zertifikats-Tests (8 Tests: CRUD, Validierung)
+- [x] Skill-Management-Tests (7 Tests: Mappings, Aggregation)
+- [x] Upload-Flow-Tests (5 Tests: Skill-Mappings, Course Library, Aggregation)
+- [x] PDF-Tests (5 Tests: Generierung, Varianten)
+- [x] Skill-Score-Engine-Tests (23 Tests: Decay, Frequenz, Level, Business-Regeln)
+
+---
+
+## OFFEN – Noch nicht implementiert
+
+### 11. Öffentliche Portfolio-Seite (`/p/[slug]`)
+- [ ] Frontend-Seite für öffentliches Profil (ohne Login sichtbar)
+- [ ] Skill-Balken-Anzeige für Besucher
+- [ ] Zertifikatsübersicht (nur öffentliche)
+- [ ] Projekt-Übersicht (nur öffentliche)
+- [ ] Collection-Anzeige
+- [ ] Route in App.tsx registrieren
+
+### 12. Open Graph & Social Media
+- [ ] OG-Metadaten für Portfolio-Seiten (Titel, Beschreibung, Bild)
+- [ ] Dynamische OG-Bilder generieren (serverseitig)
+- [ ] Twitter Card Metadaten
+- [ ] Share-Buttons für LinkedIn, Twitter, Facebook
+- [ ] Kopieren-Button für Portfolio-Link (auf öffentlicher Seite)
+
+### 13. Collections-Management-UI
+- [ ] Collections-Listenansicht (`/collections`)
+- [ ] Collection erstellen/bearbeiten/löschen im Frontend
+- [ ] Zertifikate per Drag & Drop zu Collections hinzufügen
+- [ ] Projekte zu Collections hinzufügen (Backend: `collectionProjectEvents`-Tabelle fehlt)
+- [ ] Collection-spezifische Skill-Visualisierung im Frontend
+- [ ] Öffentliche Collection-Ansicht (`/c/[slug]`)
+- [ ] Route in App.tsx registrieren
+
+### 14. Projekte-Listenansicht
+- [ ] Projekte-Listenansicht (`/projects`)
+- [ ] Projekt-Bearbeitungs-Dialog (analog zu EditCertificateDialog)
+- [ ] Projekt-Löschfunktion im Frontend
+- [ ] Route in App.tsx registrieren
+
+### 15. Erweiterte Filter-Funktionen (Zertifikate)
+- [x] Filter nach Aussteller (Dropdown/Select)
+- [x] Filter nach Datum/Zeitraum
+- [x] Filter nach Kategorie (IT, Marketing, Management, Healthcare)
+- [x] Filter nach Level (Beginner bis Expert)
+- [x] Filter nach Priorität (Normal/Wichtig)
+- [x] Kombinierte Filter mit Suchleiste
+- [x] Filter-Panel mit Ein-/Ausblenden
+- [x] Aktive Filter als Tags mit Einzelentfernung
+- [x] Filter-Zähler im Button
+- [x] "Alle zurücksetzen"-Funktion
+- [x] 31 Vitest-Tests für Filter-Logik bestanden
+
+### 16. DSGVO & Rechtliches
+- [ ] Datenschutzerklärung-Seite (`/datenschutz`)
+- [ ] Impressum-Seite (`/impressum`)
+- [ ] Cookie-Banner / Einwilligungsdialog
+- [ ] Links in Footer der Startseite
+- [ ] Datenexport-Funktion (DSGVO Art. 20)
+- [ ] Account-Löschung (DSGVO Art. 17)
+
+### 17. Erweiterte Skill-Features
+- [ ] Skill-Entwicklung über Zeit visualisieren (Zeitreihen-Diagramm)
+- [ ] Skill-Vergleich zwischen Collections
+- [ ] Skill-Empfehlungen basierend auf Lücken
+- [ ] Skill-Kategorien-Filter im Dashboard
+
+### 18. UX-Verbesserungen
+- [ ] Onboarding-Flow für neue Nutzer
+- [ ] Leere Zustände (Empty States) für alle Listen verbessern
+- [ ] Breadcrumb-Navigation
+- [ ] Tastatur-Shortcuts
+- [ ] Benachrichtigungen bei Skill-Level-Änderungen
+- [ ] Favicon konfigurieren
+
+### 19. Performance & Qualität
+- [ ] Frontend-Tests (Vitest für React-Komponenten)
+- [ ] E2E-Tests (kritische Flows)
+- [ ] Lazy Loading für Seiten
+- [ ] Bild-Optimierung für hochgeladene Zertifikate
+- [ ] Error-Tracking und Monitoring
