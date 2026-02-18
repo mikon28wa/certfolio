@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Briefcase, Loader2, Plus, Sparkles, Trash2, Upload, Link as LinkIcon, Image, FileText } from "lucide-react";
+import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { useCallback, useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -258,6 +259,8 @@ export default function NewProject() {
       }} />
 
       <div className="relative z-10 container max-w-4xl py-8">
+        <PageBreadcrumb segments={[{ label: "Projekte" }, { label: "Neues Projekt" }]} />
+
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} className="text-muted-foreground hover:text-foreground">

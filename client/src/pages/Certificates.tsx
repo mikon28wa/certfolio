@@ -16,6 +16,7 @@ import { Award, Plus, Search, FileText, ExternalLink, Shield, Trash2, Edit, X, F
 import { Link } from "wouter";
 import { toast } from "sonner";
 import EditCertificateDialog from "@/components/EditCertificateDialog";
+import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 
 // ==================== CONSTANTS ====================
 
@@ -188,6 +189,8 @@ export default function Certificates() {
     <div className="min-h-screen">
       <div className="border-b border-border/50 bg-card/30 backdrop-blur-sm">
         <div className="container py-8">
+          <PageBreadcrumb segments={[{ label: "Zertifikate" }]} />
+
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>

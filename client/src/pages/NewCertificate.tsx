@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { Upload, Loader2, FileText, Link as LinkIcon, X } from "lucide-react";
+import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 
@@ -227,6 +228,7 @@ export default function NewCertificate() {
     <div className="min-h-screen">
       <div className="border-b border-border/50 bg-card/30 backdrop-blur-sm">
         <div className="container py-8">
+          <PageBreadcrumb segments={[{ label: "Zertifikate", href: "/certificates" }, { label: "Neues Zertifikat" }]} />
           <h1 className="text-4xl font-bold mb-2">Neues Zertifikat hinzufügen</h1>
           <p className="text-muted-foreground">Lade ein Zertifikat hoch oder füge einen Link hinzu</p>
         </div>

@@ -10,6 +10,7 @@ import { AlertCircle, TrendingUp, Award, RefreshCw, ChevronRight, Briefcase, Gra
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
+import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import {
   Dialog,
   DialogContent,
@@ -134,6 +135,8 @@ export default function Skills() {
       }} />
 
       <div className="relative z-10 container max-w-5xl py-8 space-y-8">
+        <PageBreadcrumb segments={[{ label: "Skills" }]} />
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">

@@ -9,6 +9,7 @@ import { ArrowLeft, Check, Copy, ExternalLink, Loader2, Save, User } from "lucid
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { toast } from "sonner";
+import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 
 export default function Profile() {
   const { user, loading } = useAuth();
@@ -89,6 +90,7 @@ export default function Profile() {
       {/* Header */}
       <div className="border-b border-border/50 bg-card/30 backdrop-blur-sm">
         <div className="container py-6">
+          <PageBreadcrumb segments={[{ label: "Profil" }]} />
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" asChild>
               <Link href="/dashboard">

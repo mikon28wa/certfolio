@@ -5,6 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { Award, Briefcase, FolderOpen, Plus, Settings, Share2, FileDown } from "lucide-react";
 import { Link } from "wouter";
 import { ExportDialog } from "@/components/ExportDialog";
+import { EmptyState } from "@/components/EmptyState";
 import { useState } from "react";
 
 export default function Dashboard() {
@@ -228,21 +229,24 @@ export default function Dashboard() {
 
         {/* Empty State */}
         {certificates && certificates.length === 0 && (
-          <Card className="border-2 border-dashed border-border/50 bg-card/30">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Award className="h-16 w-16 text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Noch keine Zertifikate</h3>
-              <p className="text-muted-foreground text-center mb-6 max-w-md">
-                Beginne damit, dein erstes Zertifikat hochzuladen und baue dein professionelles Portfolio auf.
-              </p>
-              <Button asChild>
-                <Link href="/certificates/new">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Erstes Zertifikat hinzufügen
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={Award}
+            title="Noch keine Zertifikate"
+            description="Beginne damit, dein erstes Zertifikat hochzuladen und baue dein professionelles Portfolio auf."
+            actions={[
+              {
+                label: "Erstes Zertifikat hinzufügen",
+                href: "/certificates/new",
+                icon: <Plus className="mr-2 h-4 w-4" />,
+              },
+              {
+                label: "Projekt dokumentieren",
+                href: "/projects/new",
+                variant: "outline",
+                icon: <Briefcase className="mr-2 h-4 w-4" />,
+              },
+            ]}
+          />
         )}
       </div>
 

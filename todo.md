@@ -165,7 +165,7 @@
 - [x] Branding-Optionen (Logo, Farben, Kontaktinfo, LinkedIn)
 - [x] Automatischer S3-Upload des generierten PDFs
 
-## 10. Tests (49 bestanden)
+## 10. Tests (96 bestanden)
 - [x] Auth-Tests (1 Test: Logout)
 - [x] Zertifikats-Tests (8 Tests: CRUD, Validierung)
 - [x] Skill-Management-Tests (7 Tests: Mappings, Aggregation)
@@ -235,12 +235,15 @@
 - [ ] Skill-Kategorien-Filter im Dashboard
 
 ### 18. UX-Verbesserungen
-- [ ] Onboarding-Flow für neue Nutzer
-- [ ] Leere Zustände (Empty States) für alle Listen verbessern
-- [ ] Breadcrumb-Navigation
+- [x] Onboarding-Hinweis für neue Nutzer (Dashboard EmptyState mit Aktionen)
+- [x] Leere Zustände (Empty States) – wiederverwendbare EmptyState-Komponente
+- [x] Breadcrumb-Navigation auf allen Unterseiten (PageBreadcrumb-Komponente)
 - [ ] Tastatur-Shortcuts
 - [ ] Benachrichtigungen bei Skill-Level-Änderungen
-- [ ] Favicon konfigurieren
+- [x] Favicon konfigurieren (SVG)
+- [x] Inter-Font via Google Fonts eingebunden
+- [x] Footer-Links für Datenschutz und Impressum
+- [x] 16 Vitest-Tests für UX-Komponenten bestanden
 
 ### 19. Performance & Qualität
 - [ ] Frontend-Tests (Vitest für React-Komponenten)

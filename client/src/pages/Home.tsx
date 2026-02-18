@@ -270,6 +270,8 @@ export default function Home() {
               <span className="text-xs text-muted-foreground">by Blue-Banana-Labs</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <Link href="/datenschutz" className="hover:text-foreground transition-colors">Datenschutz</Link>
+              <Link href="/impressum" className="hover:text-foreground transition-colors">Impressum</Link>
               <span>&copy; {new Date().getFullYear()} Blue-Banana-Labs</span>
             </div>
           </div>
