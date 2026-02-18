@@ -314,3 +314,13 @@
 - [x] ExtendedCertificateAnalysis-Interface erweitert
 - [x] JSON-Schema für LLM-Response aktualisiert
 - [x] Prompt mit detaillierten Anweisungen für neue Felder
+
+
+### Spezialisierte LLM-System-Prompts
+- [x] System-Prompts in separate Konfigurationsdatei auslagern (llmPrompts.ts)
+- [x] Spezialisierter Prompt für PDF-Metadaten-Extraktion (CERTIFICATE_METADATA_EXTRACTION)
+- [x] Spezialisierter Prompt für erweiterte Zertifikats-Analyse mit Skills (EXTENDED_CERTIFICATE_ANALYSIS)
+- [x] Spezialisierter Prompt für Projekt-Skill-Extraktion (PROJECT_SKILL_EXTRACTION)
+- [x] Prompt-Versionierung mit Datum und Versionsnummer (PromptConfig-Interface)
+- [x] Historische Prompt-Versionen abrufbar machen (getAllVersions, getPromptVersion)
+- [x] Alle Inline-Prompts durch getCurrentPrompt ersetzt

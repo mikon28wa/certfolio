@@ -1,4 +1,5 @@
 import { invokeLLM } from "./_core/llm";
+import { getCurrentPrompt, CERTIFICATE_METADATA_EXTRACTION, EXTENDED_CERTIFICATE_ANALYSIS, PROJECT_SKILL_EXTRACTION } from "./llmPrompts";
 
 export interface CertificateMetadata {
   title: string;
@@ -45,14 +46,7 @@ export async function analyzeCertificatePDF(
       messages: [
         {
           role: "system",
-          content: `Du bist ein Experte für die Analyse von Zertifikaten und Bescheinigungen. 
-Extrahiere folgende Informationen aus dem bereitgestellten Dokument:
-1. Titel des Zertifikats (z.B. "AWS Certified Solutions Architect", "Google Analytics Zertifikat")
-2. Aussteller/Institution (z.B. "Amazon Web Services", "Google", "Coursera")
-3. Ausstellungsdatum im Format YYYY-MM-DD (falls vorhanden, sonst null)
-4. Kurze Beschreibung (1-2 Sätze über den Inhalt/Umfang des Zertifikats)
-
-Antworte ausschließlich mit einem JSON-Objekt im folgenden Format, ohne zusätzliche Erklärungen.`,
+          content: getCurrentPrompt(CERTIFICATE_METADATA_EXTRACTION),
         },
         {
           role: "user",
@@ -148,24 +142,7 @@ export async function analyzeProject(
       messages: [
         {
           role: "system",
-          content: `Du bist ein Experte für die Analyse von Projekten und die Extraktion von Skills.
-
-Analysiere das beschriebene Projekt und extrahiere:
-
-1. **Skill-Mapping:**
-   Zerlege das Projekt in 3-7 konkrete Skills mit Gewichtung.
-   - skillName: Präziser Skill-Name (z.B. "React", "API Design", "Data Analysis")
-   - skillCategory: "Technical", "Soft Skills", "Domain Knowledge", "Tools"
-   - weight: Gewichtung 0-100 (Summe aller Weights sollte ~100 ergeben)
-   - reasoning: Kurze Begründung
-
-2. **Projekttyp:**
-   Klassifiziere das Projekt (z.B. "Web-App MVP", "Landingpage", "Datenanalyse", "Kursprojekt", "API-Service", "Mobile App")
-
-3. **Technologien:**
-   Liste alle erkannten Technologien und Tools auf.
-
-Antworte ausschließlich mit einem JSON-Objekt.`,
+          content: getCurrentPrompt(PROJECT_SKILL_EXTRACTION),
         },
         {
           role: "user",
@@ -235,38 +212,7 @@ export async function analyzeCertificateWithSkills(
       messages: [
         {
           role: "system",
-          content: `Du bist ein Experte für die Analyse von Zertifikaten und die Extraktion von Skill-Informationen.
-
-Extrahiere folgende Informationen aus dem bereitgestellten Zertifikat:
-
-1. **Basis-Metadaten:**
-   - Titel des Zertifikats
-   - Aussteller/Institution
-   - Ausstellungsdatum (YYYY-MM-DD oder null)
-   - Beschreibung (1-2 Sätze)
-
-2. **Kurs-Metadaten:**
-   - Kursdauer in Stunden (falls erkennbar, sonst null)
-   - Credits/ECTS (falls erkennbar, sonst null)
-   - Level: beginner, intermediate, advanced, expert (basierend auf Inhalt/Voraussetzungen)
-   - Kategorie: it, marketing, management, healthcare, other
-   - customCategory: Falls category="other", extrahiere einen präzisen Freitext-Kategorienamen (z.B. "Blockchain", "Cybersecurity", "Data Science")
-   - priority: "important" wenn es sich um ein anerkanntes/wichtiges Zertifikat handelt (z.B. AWS, Google, Microsoft), sonst "normal"
-   - isVerified: true wenn eine Verifikations-URL oder ID im Dokument erkennbar ist
-   - verificationUrl: Extrahiere die Verifikations-URL falls vorhanden (z.B. Coursera-Link, Credential-ID-URL)
-
-3. **Skill-Mapping:**
-   Analysiere den Kursinhalt und zerlege ihn in 3-7 konkrete Skills mit Gewichtung.
-   - skillName: Präziser Skill-Name (z.B. "Python Programming", "Data Analysis", "Project Management")
-   - skillCategory: "Technical", "Soft Skills", "Domain Knowledge", "Tools"
-   - weight: Gewichtung 0-100 (Summe aller Weights sollte ~100 ergeben)
-   - reasoning: Kurze Begründung warum dieser Skill mit dieser Gewichtung
-
-Beispiel für Skill-Mapping:
-- "AWS Solutions Architect" → 40% Cloud Architecture, 30% AWS Services, 20% Security, 10% Cost Optimization
-- "Google Analytics" → 50% Web Analytics, 30% Data Interpretation, 20% Reporting
-
-Antworte ausschließlich mit einem JSON-Objekt.`,
+          content: getCurrentPrompt(EXTENDED_CERTIFICATE_ANALYSIS),
         },
         {
           role: "user",
