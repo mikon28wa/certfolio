@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Award, FolderOpen, Plus, Settings, Share2, FileDown } from "lucide-react";
+import { Award, Briefcase, FolderOpen, Plus, Settings, Share2, FileDown } from "lucide-react";
 import { Link } from "wouter";
 import { ExportDialog } from "@/components/ExportDialog";
 import { useState } from "react";
@@ -146,21 +146,16 @@ export default function Dashboard() {
 
           <Card className="border-2 border-border/50 bg-card/50 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle>Collections erstellen</CardTitle>
+              <CardTitle>Projekte dokumentieren</CardTitle>
               <CardDescription>
-                Gruppiere Zertifikate für Bewerbungen oder Social Media
+                Füge Praxisprojekte als Nachweis deiner Skills hinzu
               </CardDescription>
             </CardHeader>
             <CardContent className="flex gap-3">
               <Button asChild>
-                <Link href="/collections/new">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Neue Collection
-                </Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link href="/collections">
-                  Alle anzeigen
+                <Link href="/projects/new">
+                  <Briefcase className="mr-2 h-4 w-4" />
+                  Neues Projekt
                 </Link>
               </Button>
             </CardContent>

@@ -174,3 +174,28 @@
 - [x] Profil-Seite: 404-Fehler bei /profile beheben
 - [x] Startseite: Komplett neu erstellen mit Anmelden/Registrieren-Button, CertFolio Produktname und Blue-Banana-Labs Branding
 - [x] Startseite: Textkorrektur bei "Collections erstellen" Feature-Card
+
+## Erweiterte Skill-Score-Engine
+- [x] Datenmodell: Projekt-Events-Tabelle (type, date, complexity, responsibility, impact)
+- [x] Datenmodell: Skill-Events-Verknüpfung (Projekte → Skills)
+- [x] Skill-Score-Engine: Decay-Funktionen (λ_cert=0.15, λ_proj=0.07)
+- [x] Skill-Score-Engine: Frequenz-Faktor (Spacing-Effekt)
+- [x] Skill-Score-Engine: Level-Mapping Score → Level 0-5
+- [x] Skill-Score-Engine: Business-Regeln (Zertifikat-only sinkt schnell)
+- [x] Backend-API: Projekt-Events CRUD
+- [x] Backend-API: Neue Skill-Score-Berechnung integrieren
+- [x] Frontend: Skill-Balken mit Level 0-5 und Decay-Visualisierung
+- [x] Frontend: Tooltips mit Score, Nachweistypen, letzter Nutzung
+- [x] Frontend: Projekt-Events hinzufügen/verwalten
+- [x] Tests: Skill-Score-Engine mit Decay und Frequenz-Faktor (23 Tests bestanden)
+- [x] Tests: Business-Regeln (Zertifikat-only Deckel)
+- [x] Tests: Level-Mapping
+
+## Erweiterte Projekt-Events (Work Samples)
+- [x] Datenmodell: Projekt-Medien-Tabelle (Bilder, PDFs, Links)
+- [x] Datenmodell: Erweiterte Felder (Rolle, Technologien, Ergebnis/Impact)
+- [x] Backend-API: Projekt-Events CRUD mit Medien-Upload
+- [x] Backend-API: KI-Analyse für Projekte (Skill-Extraktion)
+- [x] Frontend: Projekt-Upload-Formular mit Medien und KI-Vorschlägen
+- [x] Collection-spezifische Skill-Level-Berechnung
+- [x] Frontend: Skill-Detailansicht (beitragende Zertifikate + Projekte)

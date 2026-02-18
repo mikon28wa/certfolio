@@ -119,6 +119,109 @@ Antworte ausschließlich mit einem JSON-Objekt im folgenden Format, ohne zusätz
  * @param mimeType - MIME type of the file
  * @returns Extended analysis including skill mappings
  */
+export interface ProjectAnalysis {
+  skills: SkillMapping[];
+  projectType: string;
+  technologies: string[];
+}
+
+/**
+ * Analyzes a project description using LLM to extract skills and technologies
+ * @param title - Project title
+ * @param description - Project description
+ * @param technologies - Technologies/tools used (optional)
+ * @param role - Role in project
+ * @returns Extracted skill mappings and project classification
+ */
+export async function analyzeProject(
+  title: string,
+  description: string,
+  technologies?: string,
+  role?: string
+): Promise<ProjectAnalysis> {
+  try {
+    const response = await invokeLLM({
+      messages: [
+        {
+          role: "system",
+          content: `Du bist ein Experte für die Analyse von Projekten und die Extraktion von Skills.
+
+Analysiere das beschriebene Projekt und extrahiere:
+
+1. **Skill-Mapping:**
+   Zerlege das Projekt in 3-7 konkrete Skills mit Gewichtung.
+   - skillName: Präziser Skill-Name (z.B. "React", "API Design", "Data Analysis")
+   - skillCategory: "Technical", "Soft Skills", "Domain Knowledge", "Tools"
+   - weight: Gewichtung 0-100 (Summe aller Weights sollte ~100 ergeben)
+   - reasoning: Kurze Begründung
+
+2. **Projekttyp:**
+   Klassifiziere das Projekt (z.B. "Web-App MVP", "Landingpage", "Datenanalyse", "Kursprojekt", "API-Service", "Mobile App")
+
+3. **Technologien:**
+   Liste alle erkannten Technologien und Tools auf.
+
+Antworte ausschließlich mit einem JSON-Objekt.`,
+        },
+        {
+          role: "user",
+          content: `Analysiere dieses Projekt:
+
+Titel: ${title}
+Beschreibung: ${description}
+${technologies ? `Technologien: ${technologies}` : ""}
+${role ? `Rolle: ${role}` : ""}`,
+        },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "project_analysis",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              skills: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    skillName: { type: "string" },
+                    skillCategory: { type: "string" },
+                    weight: { type: "number" },
+                    reasoning: { type: "string" },
+                  },
+                  required: ["skillName", "skillCategory", "weight", "reasoning"],
+                  additionalProperties: false,
+                },
+              },
+              projectType: { type: "string" },
+              technologies: {
+                type: "array",
+                items: { type: "string" },
+              },
+            },
+            required: ["skills", "projectType", "technologies"],
+            additionalProperties: false,
+          },
+        },
+      },
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("Keine Antwort vom LLM erhalten");
+    }
+
+    const contentStr = typeof content === 'string' ? content : JSON.stringify(content);
+    const analysis = JSON.parse(contentStr) as ProjectAnalysis;
+    return analysis;
+  } catch (error) {
+    console.error("[LLM Service] Fehler bei der Projekt-Analyse:", error);
+    throw new Error("Fehler bei der automatischen Analyse des Projekts");
+  }
+}
+
 export async function analyzeCertificateWithSkills(
   fileUrl: string,
   mimeType: string

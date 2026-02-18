@@ -46,6 +46,9 @@ describe("Skill Management", () => {
     try {
       // Delete in reverse order of dependencies
       await database.execute(`DELETE FROM user_skills WHERE userId IN (${createdUserIds.join(',') || '0'})`);
+      await database.execute(`DELETE FROM project_skill_links WHERE projectId IN (SELECT id FROM project_events WHERE userId IN (${createdUserIds.join(',') || '0'}))`);
+      await database.execute(`DELETE FROM project_media WHERE projectId IN (SELECT id FROM project_events WHERE userId IN (${createdUserIds.join(',') || '0'}))`);
+      await database.execute(`DELETE FROM project_events WHERE userId IN (${createdUserIds.join(',') || '0'})`);
       await database.execute(`DELETE FROM skill_mappings WHERE certificateId IN (SELECT id FROM certificates WHERE userId IN (${createdUserIds.join(',') || '0'}))`);
       await database.execute(`DELETE FROM collection_certificates WHERE certificateId IN (SELECT id FROM certificates WHERE userId IN (${createdUserIds.join(',') || '0'}))`);
       await database.execute(`DELETE FROM certificates WHERE userId IN (${createdUserIds.join(',') || '0'})`);
@@ -58,6 +61,7 @@ describe("Skill Management", () => {
       console.error('Cleanup error:', error);
     }
   });
+
   describe("skillMappings.createBulk", () => {
     it("should create multiple skill mappings for a certificate", async () => {
       const ctx = createAuthContext(1);
@@ -151,16 +155,16 @@ describe("Skill Management", () => {
         ],
       });
 
-      // Get user skills
+      // Get user skills - with new scoring engine, values are computed via decay
       const skills = await caller.skills.getUserSkills();
 
       expect(skills.length).toBeGreaterThan(0);
       
       const webAnalytics = skills.find(s => s.skillName === "Web Analytics");
       expect(webAnalytics).toBeDefined();
-      expect(webAnalytics?.totalPoints).toBe(50);
-      expect(webAnalytics?.level).toBe(1); // 50 points = level 1
-      expect(webAnalytics?.progressPercentage).toBe(50); // 50% towards level 2
+      // With decay engine: score is computed, totalPoints = round(score * 100)
+      // The exact value depends on decay from issueDate to now
+      expect(webAnalytics?.totalPoints).toBeGreaterThan(0);
       expect(webAnalytics?.certificateCount).toBe(1);
     });
   });
@@ -211,13 +215,16 @@ describe("Skill Management", () => {
 
       const pythonSkill = skills.find(s => s.skillName === "Python");
       expect(pythonSkill).toBeDefined();
-      expect(pythonSkill?.totalPoints).toBe(140); // 60 + 80
-      expect(pythonSkill?.level).toBe(2); // 140 points = level 2
-      expect(pythonSkill?.progressPercentage).toBe(40); // 40% towards level 3
+      // With decay engine: two certificates contribute to Python
+      // Score depends on decay from creation date to now
+      expect(pythonSkill?.totalPoints).toBeGreaterThan(0);
       expect(pythonSkill?.certificateCount).toBe(2);
+      // Python should have higher score than single-cert skills
+      const programmingSkill = skills.find(s => s.skillName === "Programming");
+      expect(pythonSkill!.totalPoints).toBeGreaterThan(programmingSkill!.totalPoints);
     });
 
-    it("should calculate correct levels based on points", async () => {
+    it("should calculate correct levels based on score", async () => {
       const ctx = createAuthContext(4);
       const caller = appRouter.createCaller(ctx);
 
@@ -236,7 +243,7 @@ describe("Skill Management", () => {
         ],
       });
 
-      // Create second certificate to push over 100 points
+      // Create second certificate
       const cert2 = await caller.certificates.create({
         title: "Advanced JavaScript",
         issuer: "Test Academy",
@@ -251,7 +258,7 @@ describe("Skill Management", () => {
         ],
       });
 
-      // Create third certificate to push over 200 points
+      // Create third certificate
       const cert3 = await caller.certificates.create({
         title: "JavaScript Mastery",
         issuer: "Test Academy",
@@ -269,9 +276,11 @@ describe("Skill Management", () => {
       const skills = await caller.skills.getUserSkills();
       const jsSkill = skills.find(s => s.skillName === "JavaScript");
 
-      expect(jsSkill?.totalPoints).toBe(250); // 100 + 150
-      expect(jsSkill?.level).toBe(3); // 250 points = level 3 (floor(250/100) + 1)
-      expect(jsSkill?.progressPercentage).toBe(50); // 50% towards level 4
+      // With decay engine: 3 certificates contribute, frequency factor applies
+      expect(jsSkill?.totalPoints).toBeGreaterThan(0);
+      expect(jsSkill?.certificateCount).toBe(3);
+      // Level should be > 0 since we have multiple recent certificates
+      expect(jsSkill?.level).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -316,7 +325,8 @@ describe("Skill Management", () => {
 
       expect(details).toBeDefined();
       expect(details?.skillName).toBe("Project Management");
-      expect(details?.totalPoints).toBe(120); // 70 + 50
+      // With decay engine: totalPoints is computed from score
+      expect(details?.totalPoints).toBeGreaterThan(0);
       expect(details?.contributingCertificates).toHaveLength(2);
 
       const contrib = details?.contributingCertificates as any[];

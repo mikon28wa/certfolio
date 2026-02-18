@@ -194,13 +194,18 @@ export const userSkills = mysqlTable("user_skills", {
   skillName: varchar("skillName", { length: 200 }).notNull(),
   skillCategory: varchar("skillCategory", { length: 100 }),
   
-  // Aggregated values
-  totalPoints: int("totalPoints").default(0).notNull(), // Sum of all weights from certificates
-  level: int("level").default(1).notNull(), // Calculated level (1-10 or similar)
-  progressPercentage: int("progressPercentage").default(0).notNull(), // 0-100%
+  // Aggregated values (new scoring system with decay)
+  totalPoints: int("totalPoints").default(0).notNull(), // Raw sum of weights (legacy)
+  score: varchar("score", { length: 20 }).default("0"), // Computed score with decay (stored as string for decimal)
+  level: int("level").default(0).notNull(), // Calculated level 0-5
+  progressPercentage: int("progressPercentage").default(0).notNull(), // 0-100% within current level
   
-  // Contributing certificates count
+  // Contributing event counts
   certificateCount: int("certificateCount").default(0).notNull(),
+  projectCount: int("projectCount").default(0).notNull(),
+  
+  // Last activity tracking
+  lastEventDate: timestamp("lastEventDate"),
   
   // Timestamps
   lastUpdated: timestamp("lastUpdated").defaultNow().onUpdateNow().notNull(),
@@ -209,3 +214,101 @@ export const userSkills = mysqlTable("user_skills", {
 
 export type UserSkill = typeof userSkills.$inferSelect;
 export type InsertUserSkill = typeof userSkills.$inferInsert;
+
+/**
+ * Project Events - Practical projects that contribute to skills
+ * Projects have slower decay than certificates and higher base weight
+ */
+export const projectEvents = mysqlTable("project_events", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  
+  // Project metadata
+  title: varchar("title", { length: 500 }).notNull(),
+  description: text("description"),
+  
+  // Role in project
+  role: mysqlEnum("role", ["solo", "team", "lead"]).default("solo").notNull(),
+  
+  // Technologies/Tools used (JSON array stored as text)
+  technologies: text("technologies"),
+  
+  // Project type classification
+  projectType: varchar("projectType", { length: 100 }), // e.g., "Web-App MVP", "Landingpage", "Datenanalyse"
+  
+  // Result/Impact description
+  impactDescription: text("impactDescription"), // e.g., "500 Nutzer, 20% Conversion"
+  
+  // Project timeline
+  dateCompleted: timestamp("dateCompleted").notNull(),
+  
+  // Experience signals (1-3 scale as per spec)
+  complexity: int("complexity").default(1).notNull(), // 1=Demo, 2=Prototype, 3=Production
+  responsibility: int("responsibility").default(1).notNull(), // 1=Contribution, 2=Co-Lead, 3=Lead
+  impact: int("impact").default(0).notNull(), // 0=None, 1=Internal, 2=External, 3=Measurable KPIs
+  
+  // Optional references
+  projectUrl: text("projectUrl"), // Link to project (GitHub, portfolio, etc.)
+  
+  // File storage (main file/image)
+  fileUrl: text("fileUrl"),
+  fileKey: text("fileKey"),
+  fileName: varchar("fileName", { length: 300 }),
+  mimeType: varchar("mimeType", { length: 100 }),
+  
+  // Timestamps
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProjectEvent = typeof projectEvents.$inferSelect;
+export type InsertProjectEvent = typeof projectEvents.$inferInsert;
+
+/**
+ * Project Skill Links - Many-to-many between projects and skills
+ * Defines which skills a project demonstrates
+ */
+export const projectSkillLinks = mysqlTable("project_skill_links", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  
+  // Skill information
+  skillName: varchar("skillName", { length: 200 }).notNull(),
+  skillCategory: varchar("skillCategory", { length: 100 }),
+  weight: int("weight").default(100).notNull(), // Percentage contribution (0-100)
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ProjectSkillLink = typeof projectSkillLinks.$inferSelect;
+export type InsertProjectSkillLink = typeof projectSkillLinks.$inferInsert;
+
+/**
+ * Project Media - Additional media files/links attached to projects
+ */
+export const projectMedia = mysqlTable("project_media", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  
+  // Media type
+  mediaType: mysqlEnum("mediaType", ["image", "pdf", "link"]).notNull(),
+  
+  // For uploaded files
+  fileUrl: text("fileUrl"),
+  fileKey: text("fileKey"),
+  fileName: varchar("fileName", { length: 300 }),
+  mimeType: varchar("mimeType", { length: 100 }),
+  
+  // For external links
+  externalUrl: text("externalUrl"),
+  linkType: varchar("linkType", { length: 50 }), // github, figma, youtube, demo, other
+  
+  // Display
+  caption: varchar("caption", { length: 300 }),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ProjectMedia = typeof projectMedia.$inferSelect;
+export type InsertProjectMedia = typeof projectMedia.$inferInsert;

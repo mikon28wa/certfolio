@@ -10,6 +10,7 @@ import NewCertificate from "./pages/NewCertificate";
 import Certificates from "./pages/Certificates";
 import Skills from "./pages/Skills";
 import Profile from "./pages/Profile";
+import NewProject from "./pages/NewProject";
 
 
 function Router() {
@@ -22,6 +23,7 @@ function Router() {
       <Route path={"/certificates/new"} component={NewCertificate} />
       <Route path={"/skills"} component={Skills} />
       <Route path={"/profile"} component={Profile} />
+      <Route path={"/projects/new"} component={NewProject} />
 
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
