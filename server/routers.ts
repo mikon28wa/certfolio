@@ -149,6 +149,7 @@ export const appRouter = router({
         skills: z.string().optional(), // JSON string
         level: z.enum(["beginner", "intermediate", "advanced", "expert"]).optional(),
         category: z.enum(["it", "marketing", "management", "healthcare", "other"]).optional(),
+        customCategory: z.string().max(100).optional(),
         priority: z.enum(["normal", "important"]).default("normal"),
         isVerified: z.boolean().default(false),
         verificationUrl: z.string().optional(),
@@ -231,6 +232,7 @@ export const appRouter = router({
         skills: z.string().optional(),
         level: z.enum(["beginner", "intermediate", "advanced", "expert"]).optional(),
         category: z.enum(["it", "marketing", "management", "healthcare", "other"]).optional(),
+        customCategory: z.string().max(100).optional(),
         priority: z.enum(["normal", "important"]).optional(),
         isVerified: z.boolean().optional(),
         verificationUrl: z.string().optional(),
@@ -437,6 +439,7 @@ export const appRouter = router({
         credits: z.number().optional(),
         level: z.enum(["beginner", "intermediate", "advanced", "expert"]).optional(),
         category: z.enum(["it", "marketing", "management", "healthcare", "other"]).optional(),
+        customCategory: z.string().max(100).optional(),
         providerUrl: z.string().optional(),
         providerName: z.string().optional(),
       }))

@@ -46,6 +46,7 @@ export const certificates = mysqlTable("certificates", {
   skills: text("skills"), // JSON array stored as text
   level: mysqlEnum("level", ["beginner", "intermediate", "advanced", "expert"]),
   category: mysqlEnum("category", ["it", "marketing", "management", "healthcare", "other"]),
+  customCategory: varchar("customCategory", { length: 100 }),
   priority: mysqlEnum("priority", ["normal", "important"]).default("normal").notNull(),
   
   // Course metadata for skill mapping
@@ -137,6 +138,7 @@ export const courseLibrary = mysqlTable("course_library", {
   credits: int("credits"), // Credits/ECTS
   level: mysqlEnum("level", ["beginner", "intermediate", "advanced", "expert"]),
   category: mysqlEnum("category", ["it", "marketing", "management", "healthcare", "other"]),
+  customCategory: varchar("customCategory", { length: 100 }),
   
   // Provider information
   providerUrl: text("providerUrl"), // Link to course page

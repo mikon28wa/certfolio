@@ -292,3 +292,16 @@
 - [ ] Upgrade-Button im Dashboard
 - [ ] Checkout-Flow mit Stripe MCP
 - [ ] Usage Limits (Free: 10 Zertifikate, Pro: unbegrenzt)
+
+
+---
+
+## NEUE ÄNDERUNGEN (In Arbeit)
+
+### Erweiterte Kategorisierung
+- [x] Freitextfeld für eigene Kategorien statt "Sonstiges"
+- [x] Frontend: Custom-Input-Feld bei Kategorie-Auswahl (NewCertificate)
+- [x] Backend: Validierung für Custom-Kategorien (customCategory-Feld)
+- [x] Datenbank: customCategory-Spalte hinzugefügt
+- [x] Anzeige: customCategory wird in Zertifikatsliste angezeigt
+- [x] Label geändert: "Sonstiges" → "Eigene Kategorie"

@@ -32,6 +32,7 @@ export default function NewCertificate() {
   const [skills, setSkills] = useState("");
   const [level, setLevel] = useState<"beginner" | "intermediate" | "advanced" | "expert" | undefined>();
   const [category, setCategory] = useState<"it" | "marketing" | "management" | "healthcare" | "other" | undefined>();
+  const [customCategory, setCustomCategory] = useState("");
   const [priority, setPriority] = useState<"normal" | "important">("normal");
   const [isVerified, setIsVerified] = useState(false);
   const [verificationUrl, setVerificationUrl] = useState("");
@@ -195,6 +196,7 @@ export default function NewCertificate() {
         skills: skills || undefined,
         level,
         category,
+        customCategory: category === "other" && customCategory ? customCategory : undefined,
         priority,
         isVerified,
         verificationUrl: verificationUrl || undefined,
@@ -463,9 +465,18 @@ export default function NewCertificate() {
                       <SelectItem value="marketing">Marketing</SelectItem>
                       <SelectItem value="management">Management</SelectItem>
                       <SelectItem value="healthcare">Healthcare</SelectItem>
-                      <SelectItem value="other">Sonstiges</SelectItem>
+                      <SelectItem value="other">Eigene Kategorie</SelectItem>
                     </SelectContent>
                   </Select>
+                  {category === "other" && (
+                    <div className="mt-2">
+                      <Input
+                        placeholder="Eigene Kategorie eingeben"
+                        value={customCategory}
+                        onChange={(e) => setCustomCategory(e.target.value)}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 

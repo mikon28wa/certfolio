@@ -25,7 +25,7 @@ const CATEGORY_OPTIONS = [
   { value: "marketing", label: "Marketing" },
   { value: "management", label: "Management" },
   { value: "healthcare", label: "Healthcare" },
-  { value: "other", label: "Sonstiges" },
+  { value: "other", label: "Eigene Kategorie" },
 ] as const;
 
 const LEVEL_OPTIONS = [
@@ -53,7 +53,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   marketing: "Marketing",
   management: "Management",
   healthcare: "Healthcare",
-  other: "Sonstiges",
+  other: "Eigene Kategorie",
 };
 
 const LEVEL_LABELS: Record<string, string> = {
@@ -442,7 +442,9 @@ export default function Certificates() {
                     <div className="flex flex-wrap gap-2">
                       {cert.category && (
                         <Badge variant="secondary" className="text-xs">
-                          {CATEGORY_LABELS[cert.category] || cert.category}
+                          {cert.category === "other" && (cert as any).customCategory
+                            ? (cert as any).customCategory
+                            : CATEGORY_LABELS[cert.category] || cert.category}
                         </Badge>
                       )}
                       {cert.level && (

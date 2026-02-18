@@ -1,0 +1,8 @@
+{
+  "query": "ALTER TABLE `certificates` ADD COLUMN `customCategory` VARCHAR(100);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user RQLuagfstphZ8U2.0c7eed8a7cc1 --database 8SNDfaXn3dqFztPfLJ3ZfF --execute ALTER TABLE `certificates` ADD COLUMN `customCategory` VARCHAR(100);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1060 (42S21) at line 1: Duplicate column name 'customCategory'"
+  ]
+}
