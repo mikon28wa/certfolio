@@ -408,3 +408,17 @@
 - [x] `logConsoleError()` extrahiert – dedupliziert error/unhandledrejection Logging
 - [x] `on()` Helper in installUiEventListeners – reduziert addEventListener-Boilerplate
 - [x] Alle 158 Tests bestehen, TypeScript 0 Fehler, Dev-Server läuft fehlerfrei
+
+### Maintainability Index Messung
+- [x] Analyse-Script erstellt (typhonjs-escomplex, Halstead + CC + LOC → MI)
+- [x] MI für alle 4 Bereiche berechnet: Durchschnitt 36.0 → 53.5 (+49%)
+- [x] Ergebnis-Report mit Vergleichstabelle erstellt (maintainability-report.md)
+
+### Runde 2: 5 weitere Dateien refaktorieren
+- [x] sidebar.tsx (734 LOC) – Übersprungen: shadcn/ui Standard-Komponente, intern bereits gut strukturiert
+- [x] NewCertificate.tsx (534 LOC → 7 Module, avg MI 34.6)
+- [x] Certificates.tsx (482 LOC → 5 Module, avg MI 34.5)
+- [x] NewProject.tsx (473 LOC → 7 Module, avg MI 34.5)
+- [x] skillsDb.ts (446 LOC → 7 Module, avg MI 41.9)
+- [x] Skills.tsx (476 LOC → 8 Module, avg MI 39.1)
+- [x] MI-Messung: Durchschnitt 1.9 → 36.9 (+1885%), alle 158 Tests bestehen
